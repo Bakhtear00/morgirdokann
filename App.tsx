@@ -8,7 +8,7 @@ import {
 import { BENGALI_TEXT } from './constants';
 import { DataService } from './services/dataService';
 import { supabase } from './services/supabaseClient';
-import { useData } from './hooks/useData';
+import { useData } from './hooks/usedata';
 
 import PurchaseModule from './components/PurchaseModule';
 import SalesModule from './components/SalesModule';
