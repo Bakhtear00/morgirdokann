@@ -3,11 +3,16 @@ import {
   BarChart3, BrainCircuit, Calculator, CreditCard, Loader2, LogOut, Package, 
   Settings, ShoppingBag, ShoppingCart, Users, Wallet, 
 } from 'lucide-react';
-import { BENGALI_TEXT } from './constants.tsx';
+
+// শুধু এই লাইনগুলো থাকবে (কোনো ডুপ্লিকেট ছাড়া)
+import { BENGALI_TEXT } from './constants';
 import { DataService } from './services/dataService';
+import { supabase } from './services/supabaseClient';
 import { useData } from './hooks/useData';
+
 import PurchaseModule from './components/PurchaseModule';
 import SalesModule from './components/SalesModule';
+// ... বাকি সব যা ছিল তাই থাকবে
 import StockModule from './components/StockModule';
 import ExpenseModule from './components/ExpenseModule';
 import CashModule from './components/CashModule';
