@@ -1,7 +1,7 @@
 {
   "name": "পোল্ট্রি-শপ-ম্যানেজমেন্ট-প্রো",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
