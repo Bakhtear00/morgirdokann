@@ -13,7 +13,7 @@ export const AIService = {
     const totalStockPieces = Object.values(stockData).reduce((sum, s) => sum + s.pieces, 0);
     const totalDead = Object.values(stockData).reduce((sum, s) => sum + s.dead, 0);
     
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
     
     const systemInstruction = `
       আপনি একজন পোল্ট্রি ব্যবসা বিশেষজ্ঞ। 
