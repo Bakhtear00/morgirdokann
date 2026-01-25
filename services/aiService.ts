@@ -15,6 +15,7 @@ export const AIService = {
     
     const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
     
+    
     const systemInstruction = `
       আপনি একজন পোল্ট্রি ব্যবসা বিশেষজ্ঞ। 
       দোকানের মালিকের নাম ${DataService.getUser()}।
