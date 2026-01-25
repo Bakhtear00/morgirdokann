@@ -49,14 +49,16 @@ const SalesModule: React.FC<SalesModuleProps> = ({ sales, refresh }) => {
         setEditingId(null);
         addToast('সংশোধন সম্পন্ন!', 'success');
       } else {
-        await DataService.addSale(saleData);
-        await DataService.addCashLog({
-          type: 'ADD',
-          amount: saleData.total,
-          date: saleData.date,
-          note: `বিক্রয় থেকে আয়: ${saleData.type}`
-        });
-        addToast('হিসাব জমা হয়েছে এবং ক্যাশ বক্সে যোগ হয়েছে!', 'success');
+        const newSale = await DataService.addSale(saleData);
+        if (newSale) {
+            await DataService.addCashLog({
+              type: 'ADD',
+              amount: saleData.total,
+              date: saleData.date,
+              note: `বিক্রয় থেকে আয়: ${saleData.type} [ref:sale:${newSale.id}]`
+            });
+            addToast('হিসাব জমা হয়েছে এবং ক্যাশ বক্সে যোগ হয়েছে!', 'success');
+        }
       }
       setFormData(initialFormState);
       refresh();
