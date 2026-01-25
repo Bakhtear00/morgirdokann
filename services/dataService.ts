@@ -1,5 +1,5 @@
 import { Purchase, Sale, DueRecord, Expense, CashLog, LotArchive } from '../types';
-import { POULTRY_TYPES } from '../constants.tsx';
+import { POULTRY_TYPES, getLocalDateString } from '../constants.tsx';
 import { supabase } from './supabaseClient';
 
 const showToast = (message: string, type: 'success' | 'error' | 'info') => {
@@ -65,10 +65,7 @@ export const DataService = {
   // --- Setup Check ---
   checkDbSetup: async () => {
     try {
-        // Try to query a table that should exist.
-        // limit(0) makes it a very cheap query.
         const { error } = await supabase.from('purchases').select('id').limit(0);
-        // If an error occurs (e.g., table not found), it will be caught.
         return !error;
     } catch (e) {
         return false;
@@ -84,20 +81,51 @@ export const DataService = {
   addPurchase: async (p: Omit<Purchase, 'id' | 'created_at'>) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Authentication required.");
-    const { error } = await supabase.from('purchases').insert([{ ...p, user_id: user.id }]);
+    const { data, error } = await supabase.from('purchases').insert([{ ...p, user_id: user.id }]).select().single();
     if (error) throw error;
     await checkAndTriggerAutoSave(p.type);
+    return data;
   },
   updatePurchase: async (p: Omit<Purchase, 'id' | 'created_at' | 'user_id'>, id: string) => {
+    const { data: originalPurchase, error: fetchError } = await supabase.from('purchases').select('is_credit').eq('id', id).single();
+    if (fetchError || !originalPurchase) throw fetchError || new Error("Original purchase not found");
+
+    const { data: originalCashLog } = await supabase.from('cash_logs').select('id').like('note', `%[ref:purchase:${id}]%`).single();
+    
     const { error } = await supabase.from('purchases').update(p).eq('id', id);
     if (error) throw error;
+
+    const wasCash = !originalPurchase.is_credit;
+    const isNowCash = !p.is_credit;
+
+    if (wasCash && !isNowCash) { // Cash -> Credit: Delete the cash log
+      if (originalCashLog) await supabase.from('cash_logs').delete().eq('id', originalCashLog.id);
+    } else if (!wasCash && isNowCash) { // Credit -> Cash: Create a new cash log
+      if (!originalCashLog) await DataService.addCashLog({ type: 'WITHDRAW', amount: p.total, date: p.date, note: `মাল ক্রয়: ${p.type} [ref:purchase:${id}]` });
+    } else if (wasCash && isNowCash) { // Cash -> Cash: Update the existing cash log
+      const cashLogData = { amount: p.total, date: p.date, note: `মাল ক্রয়: ${p.type} [ref:purchase:${id}]` };
+      if (originalCashLog) {
+        await supabase.from('cash_logs').update(cashLogData).eq('id', originalCashLog.id);
+      } else {
+        await DataService.addCashLog({ type: 'WITHDRAW', ...cashLogData });
+      }
+    }
+
     await checkAndTriggerAutoSave(p.type);
   },
   deletePurchase: async (id: string) => {
-    const { data } = await supabase.from('purchases').select('type').eq('id', id).single();
+    const { data: purchaseToDelete } = await supabase.from('purchases').select('type, is_credit').eq('id', id).single();
+    if (!purchaseToDelete) return;
+
+    if (!purchaseToDelete.is_credit) {
+      const { data: cashLog } = await supabase.from('cash_logs').select('id').like('note', `%[ref:purchase:${id}]%`).single();
+      if (cashLog) await supabase.from('cash_logs').delete().eq('id', cashLog.id);
+    }
+    
     const { error } = await supabase.from('purchases').delete().eq('id', id);
     if (error) throw error;
-    if(data) await checkAndTriggerAutoSave(data.type);
+    
+    await checkAndTriggerAutoSave(purchaseToDelete.type);
   },
 
   getSales: async (): Promise<Sale[]> => {
@@ -108,20 +136,36 @@ export const DataService = {
   addSale: async (s: Omit<Sale, 'id' | 'created_at'>) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Authentication required.");
-    const { error } = await supabase.from('sales').insert([{ ...s, user_id: user.id }]);
+    const { data, error } = await supabase.from('sales').insert([{ ...s, user_id: user.id }]).select().single();
     if (error) throw error;
     await checkAndTriggerAutoSave(s.type);
+    return data;
   },
   updateSale: async (s: Omit<Sale, 'id' | 'created_at' | 'user_id'>, id: string) => {
+    const { data: originalCashLog } = await supabase.from('cash_logs').select('id').like('note', `%[ref:sale:${id}]%`).single();
+
     const { error } = await supabase.from('sales').update(s).eq('id', id);
     if (error) throw error;
+
+    const cashLogData = { amount: s.total, date: s.date, note: `বিক্রয় থেকে আয়: ${s.type} [ref:sale:${id}]` };
+    if (originalCashLog) {
+      await supabase.from('cash_logs').update(cashLogData).eq('id', originalCashLog.id);
+    } else {
+      await DataService.addCashLog({ type: 'ADD', ...cashLogData });
+    }
     await checkAndTriggerAutoSave(s.type);
   },
   deleteSale: async (id: string) => {
-    const { data } = await supabase.from('sales').select('type').eq('id', id).single();
+    const { data: saleToDelete } = await supabase.from('sales').select('type').eq('id', id).single();
+    if (!saleToDelete) return;
+    
+    const { data: cashLog } = await supabase.from('cash_logs').select('id').like('note', `%[ref:sale:${id}]%`).single();
+    if (cashLog) await supabase.from('cash_logs').delete().eq('id', cashLog.id);
+
     const { error } = await supabase.from('sales').delete().eq('id', id);
     if (error) throw error;
-    if(data) await checkAndTriggerAutoSave(data.type);
+    
+    await checkAndTriggerAutoSave(saleToDelete.type);
   },
   
   getExpenses: async (): Promise<Expense[]> => {
@@ -132,14 +176,28 @@ export const DataService = {
   addExpense: async (e: Omit<Expense, 'id' | 'created_at'>) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Authentication required.");
-    const { error } = await supabase.from('expenses').insert([{ ...e, user_id: user.id }]);
+    const { data, error } = await supabase.from('expenses').insert([{ ...e, user_id: user.id }]).select().single();
     if (error) throw error;
+    return data;
   },
   updateExpense: async (e: Omit<Expense, 'id' | 'created_at' | 'user_id'>, id: string) => {
+    const { data: originalCashLog } = await supabase.from('cash_logs').select('id').like('note', `%[ref:expense:${id}]%`).single();
+    
     const { error } = await supabase.from('expenses').update(e).eq('id', id);
     if (error) throw error;
+
+    const note = `খরচ: ${e.category}${e.note ? ' - ' + e.note : ''} [ref:expense:${id}]`;
+    const cashLogData = { amount: e.amount, date: e.date, note };
+    if (originalCashLog) {
+        await supabase.from('cash_logs').update(cashLogData).eq('id', originalCashLog.id);
+    } else {
+        await DataService.addCashLog({ type: 'WITHDRAW', ...cashLogData });
+    }
   },
   deleteExpense: async (id: string) => {
+    const { data: cashLog } = await supabase.from('cash_logs').select('id').like('note', `%[ref:expense:${id}]%`).single();
+    if (cashLog) await supabase.from('cash_logs').delete().eq('id', cashLog.id);
+
     const { error } = await supabase.from('expenses').delete().eq('id', id);
     if (error) throw error;
   },
