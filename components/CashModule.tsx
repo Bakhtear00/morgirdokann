@@ -185,7 +185,9 @@ const CashModule: React.FC<CashModuleProps> = ({ cashLogs, refresh }) => {
                           <span className={`text-[9px] font-black uppercase mb-1 ${log.type === 'WITHDRAW' ? 'text-red-500' : 'text-green-600'}`}>
                             {log.type === 'OPENING' ? 'শুরু ক্যাশ' : log.type === 'ADD' ? 'জমা' : 'খরচ/উত্তোলন'}
                           </span>
-                          <span className="text-base text-gray-900 font-black">{log.note || 'সাধারণ লেনদেন'}</span>
+                          <span className="text-base text-gray-900 font-black">
+                            {log.note?.split(' [ref:')[0] || 'সাধারণ লেনদেন'}
+                          </span>
                         </div>
                       </td>
                       <td className={`px-6 py-5 text-right font-black text-2xl ${log.type === 'WITHDRAW' ? 'text-red-600' : 'text-green-700'}`}>
