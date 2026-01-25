@@ -28,6 +28,7 @@ const AuthModule: React.FC<AuthModuleProps> = ({ onAuthSuccess }) => {
       setLoading(false);
     }
   };
+
   
   const handleSignupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
