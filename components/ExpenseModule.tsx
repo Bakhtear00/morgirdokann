@@ -46,14 +46,16 @@ const ExpenseModule: React.FC<ExpenseModuleProps> = ({ expenses, refresh }) => {
         addToast('খরচ আপডেট হয়েছে!', 'success');
         setEditingId(null);
       } else {
-        await DataService.addExpense(expenseData);
-        await DataService.addCashLog({
-          type: 'WITHDRAW',
-          amount: expenseAmount,
-          date: formData.date,
-          note: `খরচ: ${formData.category}${formData.note ? ' - ' + formData.note : ''}`
-        });
-        addToast('খরচ সংরক্ষিত হয়েছে!', 'success');
+        const newExpense = await DataService.addExpense(expenseData);
+        if (newExpense) {
+            await DataService.addCashLog({
+              type: 'WITHDRAW',
+              amount: expenseAmount,
+              date: formData.date,
+              note: `খরচ: ${formData.category}${formData.note ? ' - ' + formData.note : ''} [ref:expense:${newExpense.id}]`
+            });
+            addToast('খরচ সংরক্ষিত হয়েছে!', 'success');
+        }
       }
       setFormData(initialFormState);
       refresh();
