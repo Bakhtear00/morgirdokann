@@ -21,7 +21,7 @@ import ReportModule from './components/ReportModule';
 import DenominationModule from './components/DenominationModule';
 import AuthModule from './components/AuthModule';
 import SettingsModule from './components/SettingsModule';
-import AIModule from './components/AIModule';
+
 import DatabaseSetupGuide from './components/DatabaseSetupGuide';
 import { ToastProvider } from './contexts/ToastContext';
 import { supabase } from './services/supabaseClient';
@@ -98,7 +98,7 @@ const AppContent: React.FC = () => {
     { id: 'cash', icon: Wallet, label: 'ক্যাশ' },
     { id: 'calc', icon: Calculator, label: 'ক্যালকুলেটর' },
     { id: 'reports', icon: BarChart3, label: 'রিপোর্ট' },
-    { id: 'ai', icon: BrainCircuit, label: 'এআই সহকারী' },
+
     { id: 'settings', icon: Settings, label: 'সেটিংস' },
   ];
   
@@ -153,7 +153,7 @@ const AppContent: React.FC = () => {
             {activeTab === 'cash' && <CashModule cashLogs={data.cashLogs} refresh={refresh} />}
             {activeTab === 'calc' && <DenominationModule cashLogs={data.cashLogs} refresh={refresh} />}
             {activeTab === 'reports' && <ReportModule purchases={data.purchases} sales={data.sales} expenses={data.expenses} cashLogs={data.cashLogs} />}
-            {activeTab === 'ai' && <AIModule />}
+            
             {activeTab === 'settings' && <SettingsModule user={userFullName} syncKey={'https://dtdzotfhixgwqujdhkbv.supabase.co'} />}
           </>
         )}
