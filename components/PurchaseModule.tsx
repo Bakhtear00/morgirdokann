@@ -52,13 +52,13 @@ const PurchaseModule: React.FC<PurchaseModuleProps> = ({ purchases, refresh }) =
         setEditingId(null);
         addToast('সংশোধন হয়েছে!', 'success');
       } else {
-        await DataService.addPurchase(purchaseData);
-        if (!formData.isCredit) {
+        const newPurchase = await DataService.addPurchase(purchaseData);
+        if (newPurchase && !formData.isCredit) {
           await DataService.addCashLog({
             type: 'WITHDRAW',
             amount: total,
             date: formData.date,
-            note: `মাল ক্রয়: ${formData.type}`
+            note: `মাল ক্রয়: ${formData.type} [ref:purchase:${newPurchase.id}]`
           });
           addToast('ক্রয় রেকর্ড সংরক্ষিত এবং ক্যাশ থেকে বিয়োগ হয়েছে!', 'success');
         } else {
