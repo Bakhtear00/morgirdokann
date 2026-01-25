@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  BarChart3, Calculator, CreditCard, Loader2, LogOut, Package, 
-  Settings, ShoppingBag, ShoppingCart, Users, Wallet, 
+  BarChart3, Calculator, CreditCard, Loader2, LogOut, Package, ShoppingBag, ShoppingCart, Users, Wallet, 
 } from 'lucide-react';
 
 // শুধু এই লাইনগুলো থাকবে (কোনো ডুপ্লিকেট ছাড়া)
@@ -20,7 +19,7 @@ import DueModule from './components/DueModule';
 import ReportModule from './components/ReportModule';
 import DenominationModule from './components/DenominationModule';
 import AuthModule from './components/AuthModule';
-import SettingsModule from './components/SettingsModule';
+
 
 import DatabaseSetupGuide from './components/DatabaseSetupGuide';
 import { ToastProvider } from './contexts/ToastContext';
@@ -99,7 +98,7 @@ const AppContent: React.FC = () => {
     { id: 'calc', icon: Calculator, label: 'ক্যালকুলেটর' },
     { id: 'reports', icon: BarChart3, label: 'রিপোর্ট' },
 
-    { id: 'settings', icon: Settings, label: 'সেটিংস' },
+   
   ];
   
   const mobileMenu = [...menu, { id: 'logout', icon: LogOut, label: 'লগ আউট' }];
@@ -154,7 +153,7 @@ const AppContent: React.FC = () => {
             {activeTab === 'calc' && <DenominationModule cashLogs={data.cashLogs} refresh={refresh} />}
             {activeTab === 'reports' && <ReportModule purchases={data.purchases} sales={data.sales} expenses={data.expenses} cashLogs={data.cashLogs} />}
             
-            {activeTab === 'settings' && <SettingsModule user={userFullName} syncKey={'https://dtdzotfhixgwqujdhkbv.supabase.co'} />}
+        
           </>
         )}
       </main>
