@@ -54,7 +54,7 @@ export const BENGALI_TEXT = {
 };
 
 export const POULTRY_TYPES = ['ব্রয়লার', 'সোনালী', 'লেয়ার','প্যারেন্ট', 'দেশী', 'কক'];
-export const EXPENSE_CATEGORIES = ['খাদ্য', 'বেতন', 'কারেন্ট বিল','গ্যাস', 'অন্যান্য'];
+export const EXPENSE_CATEGORIES = ['খাবার','মুরগির খাদ্য ', 'বেতন', 'কারেন্ট বিল','গ্যাস', 'অন্যান্য'];
 export const NOTES = [1000, 500, 200, 100, 50, 20, 10, 5];
 
 export const getLocalDateString = (date = new Date()): string => {
