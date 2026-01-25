@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  BarChart3, BrainCircuit, Calculator, CreditCard, Loader2, LogOut, Package, 
+  BarChart3, Calculator, CreditCard, Loader2, LogOut, Package, 
   Settings, ShoppingBag, ShoppingCart, Users, Wallet, 
 } from 'lucide-react';
 
