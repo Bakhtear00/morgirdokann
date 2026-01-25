@@ -1,5 +1,5 @@
 import { Purchase, Sale, DueRecord, Expense, CashLog, LotArchive } from '../types';
-import { POULTRY_TYPES, getLocalDateString } from '../constants.tsx';
+import { POULTRY_TYPES } from '../constants.tsx';
 import { supabase } from './supabaseClient';
 
 const showToast = (message: string, type: 'success' | 'error' | 'info') => {
@@ -65,7 +65,10 @@ export const DataService = {
   // --- Setup Check ---
   checkDbSetup: async () => {
     try {
+        // Try to query a table that should exist.
+        // limit(0) makes it a very cheap query.
         const { error } = await supabase.from('purchases').select('id').limit(0);
+        // If an error occurs (e.g., table not found), it will be caught.
         return !error;
     } catch (e) {
         return false;
@@ -86,38 +89,15 @@ export const DataService = {
     await checkAndTriggerAutoSave(p.type);
   },
   updatePurchase: async (p: Omit<Purchase, 'id' | 'created_at' | 'user_id'>, id: string) => {
-    const { data: originalPurchase, error: fetchError } = await supabase.from('purchases').select('total, is_credit').eq('id', id).single();
-    if (fetchError || !originalPurchase) throw fetchError || new Error("Original purchase not found");
-
     const { error } = await supabase.from('purchases').update(p).eq('id', id);
     if (error) throw error;
-
-    const wasCash = !originalPurchase.is_credit;
-    const isNowCash = !p.is_credit;
-
-    if (wasCash && !isNowCash) { // Cash -> Credit
-      await DataService.addCashLog({ type: 'ADD', amount: originalPurchase.total, date: p.date, note: 'ক্রয় বাকিতে পরিবর্তন' });
-    } else if (!wasCash && isNowCash) { // Credit -> Cash
-      await DataService.addCashLog({ type: 'WITHDRAW', amount: p.total, date: p.date, note: 'ক্রয় নগদে পরিবর্তন' });
-    } else if (wasCash && isNowCash && p.total !== originalPurchase.total) { // Cash -> Cash (amount changed)
-      const diff = p.total - originalPurchase.total;
-      await DataService.addCashLog({ type: diff > 0 ? 'WITHDRAW' : 'ADD', amount: Math.abs(diff), date: p.date, note: 'ক্রয়ের পরিমাণ সংশোধন' });
-    }
-
     await checkAndTriggerAutoSave(p.type);
   },
   deletePurchase: async (id: string) => {
-    const { data: purchaseToDelete, error: fetchError } = await supabase.from('purchases').select('type, total, is_credit, date').eq('id', id).single();
-    if (fetchError || !purchaseToDelete) throw fetchError || new Error("Purchase to delete not found");
-
+    const { data } = await supabase.from('purchases').select('type').eq('id', id).single();
     const { error } = await supabase.from('purchases').delete().eq('id', id);
     if (error) throw error;
-
-    if (!purchaseToDelete.is_credit) {
-      await DataService.addCashLog({ type: 'ADD', amount: purchaseToDelete.total, date: purchaseToDelete.date, note: `"${purchaseToDelete.type}" ক্রয় মোছা হয়েছে` });
-    }
-    
-    await checkAndTriggerAutoSave(purchaseToDelete.type);
+    if(data) await checkAndTriggerAutoSave(data.type);
   },
 
   getSales: async (): Promise<Sale[]> => {
@@ -133,29 +113,15 @@ export const DataService = {
     await checkAndTriggerAutoSave(s.type);
   },
   updateSale: async (s: Omit<Sale, 'id' | 'created_at' | 'user_id'>, id: string) => {
-    const { data: originalSale, error: fetchError } = await supabase.from('sales').select('total').eq('id', id).single();
-    if (fetchError || !originalSale) throw fetchError || new Error("Original sale not found");
-
     const { error } = await supabase.from('sales').update(s).eq('id', id);
     if (error) throw error;
-
-    const diff = s.total - originalSale.total;
-    if (diff !== 0) {
-      await DataService.addCashLog({ type: diff > 0 ? 'ADD' : 'WITHDRAW', amount: Math.abs(diff), date: s.date, note: 'বিক্রয়ের পরিমাণ সংশোধন' });
-    }
-
     await checkAndTriggerAutoSave(s.type);
   },
   deleteSale: async (id: string) => {
-    const { data: saleToDelete, error: fetchError } = await supabase.from('sales').select('type, total, date').eq('id', id).single();
-    if (fetchError || !saleToDelete) throw fetchError || new Error("Sale to delete not found");
-
+    const { data } = await supabase.from('sales').select('type').eq('id', id).single();
     const { error } = await supabase.from('sales').delete().eq('id', id);
     if (error) throw error;
-
-    await DataService.addCashLog({ type: 'WITHDRAW', amount: saleToDelete.total, date: saleToDelete.date, note: `"${saleToDelete.type}" বিক্রয় মোছা হয়েছে` });
-    
-    await checkAndTriggerAutoSave(saleToDelete.type);
+    if(data) await checkAndTriggerAutoSave(data.type);
   },
   
   getExpenses: async (): Promise<Expense[]> => {
