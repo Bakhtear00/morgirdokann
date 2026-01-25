@@ -9,6 +9,7 @@ interface Toast {
   type: ToastType;
 }
 
+
 interface ToastContextType {
   addToast: (message: string, type: ToastType) => void;
 }
