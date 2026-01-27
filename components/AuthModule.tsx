@@ -25,7 +25,6 @@ const AuthModule: React.FC<AuthModuleProps> = ({ onAuthSuccess }) => {
 
     try {
       if (isLogin) {
-        // ১. ইউজারনেম দিয়ে প্রোফাইল থেকে ইমেইল খুঁজে বের করা
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('email')
@@ -36,7 +35,6 @@ const AuthModule: React.FC<AuthModuleProps> = ({ onAuthSuccess }) => {
           throw new Error('এই ইউজারনেমটি পাওয়া যায়নি!');
         }
 
-        // ২. প্রাপ্ত ইমেইল এবং মাস্কড পাসওয়ার্ড দিয়ে লগইন করা
         const { error: loginError } = await supabase.auth.signInWithPassword({
           email: profile.email,
           password: finalPassword,
@@ -45,17 +43,14 @@ const AuthModule: React.FC<AuthModuleProps> = ({ onAuthSuccess }) => {
         if (loginError) throw new Error('পাসওয়ার্ড সঠিক নয়!');
         onAuthSuccess();
       } else {
-        // ৩. সাইন-আপ করার সময়
         const { error: signUpError } = await supabase.auth.signUp({
           email: email,
           password: finalPassword,
-          options: {
-            data: { username: username }
-          }
+          options: { data: { username: username } }
         });
 
         if (signUpError) throw signUpError;
-        showToast('নিবন্ধন সফল হয়েছে! এখন লগইন করুন।', 'success');
+        showToast('আইডি তৈরি হয়েছে! এখন লগইন করুন।', 'success');
         setIsLogin(true);
       }
     } catch (error: any) {
@@ -74,11 +69,9 @@ const AuthModule: React.FC<AuthModuleProps> = ({ onAuthSuccess }) => {
               {isLogin ? <LogIn className="text-green-600" size={32} /> : <UserPlus className="text-green-600" size={32} />}
             </div>
           </div>
-          
           <h2 className="text-2xl font-bold text-center text-gray-800 mb-8">
             {isLogin ? 'লগইন করুন' : 'নতুন আইডি খুলুন'}
           </h2>
-
           <form onSubmit={handleAuth} className="space-y-4">
             {!isLogin && (
               <div className="relative">
@@ -86,38 +79,35 @@ const AuthModule: React.FC<AuthModuleProps> = ({ onAuthSuccess }) => {
                 <input
                   type="email"
                   placeholder="আপনার ইমেইল"
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 outline-none"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 outline-none"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </div>
             )}
-
             <div className="relative">
               <User className="absolute left-3 top-3 text-gray-400" size={20} />
               <input
                 type="text"
-                placeholder="ইউজারনেম (যেমন: ১ বা ২)"
-                className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 outline-none"
+                placeholder="ইউজারনেম"
+                className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 outline-none"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
               />
             </div>
-
             <div className="relative">
               <Lock className="absolute left-3 top-3 text-gray-400" size={20} />
               <input
                 type="password"
                 placeholder="পাসওয়ার্ড (১ বা ২ সংখ্যার)"
-                className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 outline-none"
+                className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 outline-none"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
             </div>
-
             <button
               type="submit"
               disabled={loading}
@@ -126,7 +116,6 @@ const AuthModule: React.FC<AuthModuleProps> = ({ onAuthSuccess }) => {
               {loading ? <Loader2 className="animate-spin" /> : isLogin ? 'লগইন করুন' : 'আইডি তৈরি করুন'}
             </button>
           </form>
-
           <div className="mt-6 text-center">
             <button 
               onClick={() => {
