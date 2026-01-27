@@ -49,7 +49,7 @@ const checkAndTriggerAutoSave = async (type: string) => {
 };
 
 export const DataService = {
-  // --- Auth (লগইন সংক্রান্ত) ---
+  // --- লগইন এবং ইউজার ---
   signUp: async (name: string, email: string, password: string) => {
     const { error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: name } } });
     if (error) throw error;
@@ -61,7 +61,7 @@ export const DataService = {
   signOut: async () => await supabase.auth.signOut(),
   getUser: async () => (await supabase.auth.getUser()).data.user,
   
-  // --- কেনা (Purchase) ---
+  // --- ক্রয় (Purchase) ---
   getPurchases: async (): Promise<Purchase[]> => {
     const { data, error } = await supabase.from('purchases').select('*').order('date', { ascending: false });
     if (error) throw error;
@@ -102,7 +102,7 @@ export const DataService = {
     if (purchaseToDelete) await checkAndTriggerAutoSave(purchaseToDelete.type);
   },
 
-  // --- বেচা (Sales) ---
+  // --- বিক্রয় (Sales) ---
   getSales: async (): Promise<Sale[]> => {
     const { data, error } = await supabase.from('sales').select('*').order('date', { ascending: false });
     if (error) throw error;
@@ -160,7 +160,7 @@ export const DataService = {
     await supabase.from('cash_logs').insert([{ ...c, user_id: user.id }]);
   },
 
-  // --- রিপোর্ট ও হিস্ট্রি (History & Stock) ---
+  // --- রিপোর্ট ও স্টক হিসাব ---
   getLotHistory: async (): Promise<LotArchive[]> => {
     const { data, error } = await supabase.from('lot_archives').select('*').order('date', { ascending: false });
     if (error) throw error;
@@ -174,7 +174,6 @@ export const DataService = {
     }, {});
   },
 
-  // এই ফাংশনটি এখন অনেক বেশি সুরক্ষিত, সাদা স্ক্রিন হবে না
   calculateStock: (purchases: Purchase[], sales: Sale[]) => {
     const stock: any = {};
     const safePurchases = Array.isArray(purchases) ? purchases : [];
