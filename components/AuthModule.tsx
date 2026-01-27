@@ -8,7 +8,8 @@ interface AuthModuleProps {
 }
 
 const AuthModule: React.FC<AuthModuleProps> = ({ onAuthSuccess }) => {
-  const [isLogin, setIsLogin] = useState(true);
+// AuthModule.tsx এর ১১ নম্বর লাইন
+const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
