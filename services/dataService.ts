@@ -21,6 +21,7 @@ const checkAndTriggerAutoSave = async (type: string) => {
     const totalPurchasePieces = purchases.reduce((sum, p) => sum + (Number(p.pieces) || 0), 0);
     const totalSaleAndDeadPieces = sales.reduce((sum, s) => sum + (Number(s.pieces) || 0) + (Number(s.mortality) || 0), 0);
     
+    // স্টক ০ বা তার নিচে নামলে আর্কাইভ হবে
     if ((totalPurchasePieces > 0) && (totalPurchasePieces - totalSaleAndDeadPieces <= 0)) {
         const totalBuy = purchases.reduce((sum, p) => sum + p.total, 0);
         const totalSell = sales.reduce((sum, s) => sum + s.total, 0);
@@ -32,16 +33,22 @@ const checkAndTriggerAutoSave = async (type: string) => {
             type: type,
             total_purchase: totalBuy,
             total_sale: totalSell,
-            profit: totalSell - totalBuy
+            profit: totalSell - totalBuy,
+            date: new Date().toISOString()
         };
         
         const { error: archiveError } = await supabase.from('lot_archives').insert([newHistoryEntry]);
         if (archiveError) throw archiveError;
 
-        const { error: resetError } = await supabase.from('user_resets').upsert({ user_id: user.id, poultry_type: type, last_reset_time: new Date().toISOString() }, { onConflict: 'user_id, poultry_type' });
+        const { error: resetError } = await supabase.from('user_resets').upsert({ 
+          user_id: user.id, 
+          poultry_type: type, 
+          last_reset_time: new Date().toISOString() 
+        }, { onConflict: 'user_id, poultry_type' });
+        
         if (resetError) throw resetError;
 
-        showToast(`${type} -এর স্টক শেষ হওয়ায় লটের হিসাবটি স্বয়ংক্রিয়ভাবে সেভ হয়েছে।`, 'info');
+        showToast(`${type} -এর স্টক শেষ হওয়ায় লটের হিসাবটি আর্কাইভ হয়েছে।`, 'info');
     }
 };
 
@@ -62,7 +69,6 @@ export const DataService = {
   signOut: async () => await supabase.auth.signOut(),
   getUser: async () => (await supabase.auth.getUser()).data.user,
   
-  // --- Setup Check ---
   checkDbSetup: async () => {
     try {
         const { error } = await supabase.from('purchases').select('id').limit(0);
@@ -87,7 +93,7 @@ export const DataService = {
     return data;
   },
   updatePurchase: async (p: Omit<Purchase, 'id' | 'created_at' | 'user_id'>, id: string) => {
-    const { data: originalPurchase, error: fetchError } = await supabase.from('purchases').select('is_credit').eq('id', id).single();
+    const { data: originalPurchase, error: fetchError } = await supabase.from('purchases').select('is_credit, type').eq('id', id).single();
     if (fetchError || !originalPurchase) throw fetchError || new Error("Original purchase not found");
 
     const { data: originalCashLog } = await supabase.from('cash_logs').select('id').like('note', `%[ref:purchase:${id}]%`).single();
@@ -95,14 +101,14 @@ export const DataService = {
     const { error } = await supabase.from('purchases').update(p).eq('id', id);
     if (error) throw error;
 
+    // ক্যাশ লগ আপডেট লজিক
     const wasCash = !originalPurchase.is_credit;
     const isNowCash = !p.is_credit;
-
-    if (wasCash && !isNowCash) { // Cash -> Credit: Delete the cash log
+    if (wasCash && !isNowCash) {
       if (originalCashLog) await supabase.from('cash_logs').delete().eq('id', originalCashLog.id);
-    } else if (!wasCash && isNowCash) { // Credit -> Cash: Create a new cash log
+    } else if (!wasCash && isNowCash) {
       if (!originalCashLog) await DataService.addCashLog({ type: 'WITHDRAW', amount: p.total, date: p.date, note: `মাল ক্রয়: ${p.type} [ref:purchase:${id}]` });
-    } else if (wasCash && isNowCash) { // Cash -> Cash: Update the existing cash log
+    } else if (wasCash && isNowCash) {
       const cashLogData = { amount: p.total, date: p.date, note: `মাল ক্রয়: ${p.type} [ref:purchase:${id}]` };
       if (originalCashLog) {
         await supabase.from('cash_logs').update(cashLogData).eq('id', originalCashLog.id);
@@ -111,6 +117,7 @@ export const DataService = {
       }
     }
 
+    // এডিট করার পর আবার অটো-সেভ চেক হবে
     await checkAndTriggerAutoSave(p.type);
   },
   deletePurchase: async (id: string) => {
@@ -153,6 +160,8 @@ export const DataService = {
     } else {
       await DataService.addCashLog({ type: 'ADD', ...cashLogData });
     }
+
+    // এডিট করার পর পুনরায় ০ হলে ভ্যানিশ হবে
     await checkAndTriggerAutoSave(s.type);
   },
   deleteSale: async (id: string) => {
@@ -182,7 +191,6 @@ export const DataService = {
   },
   updateExpense: async (e: Omit<Expense, 'id' | 'created_at' | 'user_id'>, id: string) => {
     const { data: originalCashLog } = await supabase.from('cash_logs').select('id').like('note', `%[ref:expense:${id}]%`).single();
-    
     const { error } = await supabase.from('expenses').update(e).eq('id', id);
     if (error) throw error;
 
@@ -197,7 +205,6 @@ export const DataService = {
   deleteExpense: async (id: string) => {
     const { data: cashLog } = await supabase.from('cash_logs').select('id').like('note', `%[ref:expense:${id}]%`).single();
     if (cashLog) await supabase.from('cash_logs').delete().eq('id', cashLog.id);
-
     const { error } = await supabase.from('expenses').delete().eq('id', id);
     if (error) throw error;
   },
