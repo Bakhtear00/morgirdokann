@@ -4,8 +4,8 @@ import {
   ShoppingBag, ShoppingCart, Users, Wallet, LogOut 
 } from 'lucide-react';
 
-import { supabase } from './services/supabaseClient'; // আপনার সঠিক পাথ
-import { useData } from './hooks/usedata'; // আপনার সঠিক পাথ
+import { supabase } from './services/supabaseClient'; 
+import { useData } from './hooks/usedata'; // আপনার ফাইল লিস্ট অনুযায়ী usedata (ছোট হাতের d)
 
 import AuthModule from './components/AuthModule';
 import PurchaseModule from './components/PurchaseModule';
@@ -51,30 +51,41 @@ const AppContent: React.FC = () => {
           <h1 className="text-xl font-bold text-green-600">মুরগির দোকান</h1>
         </div>
         <nav className="flex-1 p-4 space-y-2">
-          <button onClick={() => setActiveTab('purchase')} className={`w-full text-left px-4 py-2 rounded-lg ${activeTab === 'purchase' ? 'bg-green-600 text-white' : 'hover:bg-green-50'}`}>কেনা</button>
-          <button onClick={() => setActiveTab('sales')} className={`w-full text-left px-4 py-2 rounded-lg ${activeTab === 'sales' ? 'bg-green-600 text-white' : 'hover:bg-green-50'}`}>বেচা</button>
-          <button onClick={() => setActiveTab('stock')} className={`w-full text-left px-4 py-2 rounded-lg ${activeTab === 'stock' ? 'bg-green-600 text-white' : 'hover:bg-green-50'}`}>স্টক</button>
-          <button onClick={() => setActiveTab('expense')} className={`w-full text-left px-4 py-2 rounded-lg ${activeTab === 'expense' ? 'bg-green-600 text-white' : 'hover:bg-green-50'}`}>খরচ</button>
-          <button onClick={() => setActiveTab('due')} className={`w-full text-left px-4 py-2 rounded-lg ${activeTab === 'due' ? 'bg-green-600 text-white' : 'hover:bg-green-50'}`}>বাকি</button>
-          <button onClick={() => setActiveTab('cash')} className={`w-full text-left px-4 py-2 rounded-lg ${activeTab === 'cash' ? 'bg-green-600 text-white' : 'hover:bg-green-50'}`}>ক্যাশ</button>
-          <button onClick={() => setActiveTab('calc')} className={`w-full text-left px-4 py-2 rounded-lg ${activeTab === 'calc' ? 'bg-green-600 text-white' : 'hover:bg-green-50'}`}>ক্যালকুলেটর</button>
-          <button onClick={() => setActiveTab('reports')} className={`w-full text-left px-4 py-2 rounded-lg ${activeTab === 'reports' ? 'bg-green-600 text-white' : 'hover:bg-green-50'}`}>রিপোর্ট</button>
-          <button onClick={() => supabase.auth.signOut()} className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 mt-10">লগআউট</button>
+          {['purchase', 'sales', 'stock', 'expense', 'due', 'cash', 'calc', 'reports'].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`w-full text-left px-4 py-2 rounded-lg capitalize ${
+                activeTab === tab ? 'bg-green-600 text-white shadow-md' : 'hover:bg-green-50'
+              }`}
+            >
+              {tab === 'calc' ? 'ক্যালকুলেটর' : tab === 'reports' ? 'রিপোর্ট' : tab}
+            </button>
+          ))}
+          <button 
+            onClick={() => supabase.auth.signOut()} 
+            className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 mt-10 flex items-center gap-2"
+          >
+            <LogOut size={18} /> লগআউট
+          </button>
         </nav>
       </aside>
 
       {/* Main Content */}
       <main className="flex-1 lg:ml-64 p-4 pb-24">
         {loading ? (
-          <div className="flex justify-center items-center h-[60vh]"><Loader2 className="animate-spin text-green-600" /></div>
+          <div className="flex flex-col justify-center items-center h-[60vh]">
+            <Loader2 className="animate-spin text-green-600 w-10 h-10 mb-2" />
+            <p className="text-gray-500 font-medium">ডেটা লোড হচ্ছে...</p>
+          </div>
         ) : (
           <div className="max-w-7xl mx-auto">
-            {activeTab === 'purchase' && <PurchaseModule purchases={data.purchases} refresh={refresh} />}
-            {activeTab === 'sales' && <SalesModule sales={data.sales} refresh={refresh} />}
-            {activeTab === 'stock' && <StockModule stock={data.stock} refresh={refresh} />}
-            {activeTab === 'expense' && <ExpenseModule expenses={data.expenses} refresh={refresh} />}
-            {activeTab === 'due' && <DueModule dues={data.dues} refresh={refresh} />}
-            {activeTab === 'cash' && <CashModule cashLogs={data.cashLogs} refresh={refresh} />}
+            {activeTab === 'purchase' && <PurchaseModule purchases={data.purchases || []} refresh={refresh} />}
+            {activeTab === 'sales' && <SalesModule sales={data.sales || []} refresh={refresh} />}
+            {activeTab === 'stock' && <StockModule stock={data.stock || []} refresh={refresh} />}
+            {activeTab === 'expense' && <ExpenseModule expenses={data.expenses || []} refresh={refresh} />}
+            {activeTab === 'due' && <DueModule dues={data.dues || []} refresh={refresh} />}
+            {activeTab === 'cash' && <CashModule cashLogs={data.cashLogs || []} refresh={refresh} />}
             {activeTab === 'calc' && <DenominationModule refresh={refresh} />}
             {activeTab === 'reports' && <ReportModule data={data} />}
           </div>
