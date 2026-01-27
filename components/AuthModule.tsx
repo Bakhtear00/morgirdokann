@@ -99,6 +99,7 @@ const AuthModule: React.FC<AuthModuleProps> = ({ onAuthSuccess }) => {
               </div>
             )}
 
+            
             <div className="relative">
               <User className="absolute left-3 top-3 text-gray-400" size={20} />
               <input
