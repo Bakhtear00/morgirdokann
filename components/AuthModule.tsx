@@ -1,175 +1,138 @@
 import React, { useState } from 'react';
-import { Bot, Loader2, Key, Clipboard, Mail } from 'lucide-react';
-import { DataService } from '../services/dataService';
+import { supabase } from '../lib/supabase';
+import { LogIn, UserPlus, Mail, User, Lock, Loader2 } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
-import { BENGALI_TEXT } from '../constants.tsx';
 
 interface AuthModuleProps {
   onAuthSuccess: () => void;
 }
 
 const AuthModule: React.FC<AuthModuleProps> = ({ onAuthSuccess }) => {
-  const [viewMode, setViewMode] = useState<'login' | 'signup' | 'forgot'>('login');
+  const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const { addToast } = useToast();
+  const { showToast } = useToast();
 
-  const handleLoginSubmit = async (e: React.FormEvent) => {
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    try {
-      await DataService.signIn(email, password);
-      // onAuthStateChange will handle the rest
-    } catch (error: any) {
-      addToast(error.message || 'আপনার ইমেইল অথবা পাসওয়ার্ড সঠিক নয়।', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  
-  const handleSignupSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
     try {
-      if (password.length < 6) {
-          throw new Error('পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।');
+      if (isLogin) {
+        // ১. ইউজারনেম দিয়ে ইমেইল খুঁজে বের করা
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('username', username)
+          .single();
+
+        if (profileError || !profile) {
+          throw new Error('ইউজারনেমটি সঠিক নয়!');
+        }
+
+        // ২. প্রাপ্ত ইমেইল দিয়ে লগইন করা
+        const { error: loginError } = await supabase.auth.signInWithPassword({
+          email: profile.email,
+          password,
+        });
+
+        if (loginError) throw loginError;
+        showToast('সাফল্যের সাথে লগইন হয়েছে!', 'success');
+      } else {
+        // সাইন-আপ লজিক
+        const { error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { username } // মেটাডাটাতে ইউজারনেম পাঠানো হচ্ছে
+          }
+        });
+
+        if (signUpError) throw signUpError;
+        showToast('অ্যাকাউন্ট তৈরি হয়েছে! এখন লগইন করুন।', 'success');
+        setIsLogin(true);
       }
-      await DataService.signUp(name, email, password);
-      addToast('আপনার একাউন্ট তৈরি হয়েছে! অনুগ্রহ করে আপনার ইমেইল চেক করে ভেরিফাই করুন।', 'success');
-      setViewMode('login');
+      onAuthSuccess();
     } catch (error: any) {
-      addToast(error.message, 'error');
+      showToast(error.message, 'error');
     } finally {
       setLoading(false);
     }
   };
-
-  const handleForgotSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-        await DataService.resetPassword(email);
-        addToast(BENGALI_TEXT.resetPasswordEmailSent, 'success');
-    } catch(error: any) {
-        addToast(error.message, 'error');
-    } finally {
-        setLoading(false);
-    }
-  };
-  
-  const renderContent = () => {
-    switch(viewMode) {
-      case 'signup':
-        return (
-          <>
-            <h1 className="text-2xl font-black text-center text-green-800 mb-2">নতুন একাউন্ট খুলুন</h1>
-            <p className="text-center text-gray-500 mb-6 text-sm">আপনার ব্যবসার জন্য একটি নতুন একাউন্ট তৈরি করুন</p>
-            <form onSubmit={handleSignupSubmit} className="space-y-4">
-              <Input id="name" type="text" label="আপনার নাম" value={name} onChange={setName} required />
-              <Input id="email-signup" type="email" label="ইমেইল" value={email} onChange={setEmail} required />
-              <Input id="password-signup" type="password" label="পাসওয়ার্ড (কমপক্ষে ৬ অক্ষরের)" value={password} onChange={setPassword} required />
-              <button type="submit" disabled={loading} className="w-full bg-green-600 text-white py-4 rounded-xl font-bold shadow-lg hover:bg-green-700 active:scale-95 transition-all flex items-center justify-center disabled:bg-gray-400">
-                {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : 'একাউন্ট খুলুন'}
-              </button>
-            </form>
-            <p className="text-center text-sm text-gray-500 mt-6">
-              আপনার কি একাউন্ট আছে?
-              <button onClick={() => setViewMode('login')} className="text-green-600 font-bold ml-1 hover:underline">
-                লগইন করুন
-              </button>
-            </p>
-          </>
-        );
-      case 'forgot':
-        return (
-           <>
-            <h1 className="text-2xl font-black text-center text-green-800 mb-2">পাসওয়ার্ড পুনরুদ্ধার</h1>
-            <p className="text-center text-gray-500 mb-6 text-sm">আপনার রেজিস্টার করা ইমেইলটি দিন</p>
-            <form onSubmit={handleForgotSubmit} className="space-y-4">
-              <Input id="email-forgot" type="email" label="ইমেইল" value={email} onChange={setEmail} required />
-              <button type="submit" disabled={loading} className="w-full bg-orange-500 text-white py-4 rounded-xl font-bold shadow-lg hover:bg-orange-600 active:scale-95 transition-all flex items-center justify-center disabled:bg-gray-400">
-                {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : 'রিসেট লিঙ্ক পাঠান'}
-              </button>
-            </form>
-            <p className="text-center text-sm text-gray-500 mt-6">
-              <button onClick={() => setViewMode('login')} className="text-green-600 font-bold ml-1 hover:underline">
-                লগইন পেজে ফিরে যান
-              </button>
-            </p>
-          </>
-        );
-      case 'login':
-      default:
-        return (
-          <>
-            <h1 className="text-2xl font-black text-center text-green-800 mb-2">স্বাগতম!</h1>
-            <p className="text-center text-gray-500 mb-6 text-sm">আপনার ব্যবসার হিসাব শুরু করুন</p>
-            <form onSubmit={handleLoginSubmit} className="space-y-4">
-              <Input id="email-login" type="email" label="ইমেইল" value={email} onChange={setEmail} required />
-              <div>
-                <Input id="password-login" type="password" label="পাসওয়ার্ড" value={password} onChange={setPassword} required />
-                <div className="text-right mt-1">
-                    <button type="button" onClick={() => { setViewMode('forgot'); setPassword(''); }} className="text-xs font-bold text-green-600 hover:underline">
-                        পাসওয়ার্ড ভুলে গেছেন?
-                    </button>
-                </div>
-              </div>
-              <button type="submit" disabled={loading} className="w-full bg-green-600 text-white py-4 rounded-xl font-bold shadow-lg hover:bg-green-700 active:scale-95 transition-all flex items-center justify-center disabled:bg-gray-400">
-                {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : 'লগইন করুন'}
-              </button>
-            </form>
-            <p className="text-center text-sm text-gray-500 mt-6">
-              আপনার কোনো একাউন্ট নেই?
-              <button onClick={() => setViewMode('signup')} className="text-green-600 font-bold ml-1 hover:underline">
-                একাউন্ট খুলুন
-              </button>
-            </p>
-          </>
-        );
-    }
-  }
 
   return (
     <div className="min-h-screen bg-green-50 flex items-center justify-center p-4">
-      <div className="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md border border-green-100">
-        <div className="flex justify-center mb-6">
-          <div className="bg-green-100 p-4 rounded-full">
-             {viewMode === 'login' && <Bot className="w-10 h-10 text-green-600" />}
-             {viewMode === 'signup' && <Mail className="w-10 h-10 text-green-600" />}
-             {viewMode === 'forgot' && <Key className="w-10 h-10 text-green-600" />}
+      <div className="max-w-md w-full bg-white rounded-3xl shadow-xl overflow-hidden">
+        <div className="p-8">
+          <div className="flex justify-center mb-6">
+            <div className="p-4 bg-green-100 rounded-full">
+              {isLogin ? <LogIn className="text-green-600" size={32} /> : <UserPlus className="text-green-600" size={32} />}
+            </div>
+          </div>
+          
+          <h2 className="text-2xl font-bold text-center text-gray-800 mb-8">
+            {isLogin ? 'স্বাগতম! লগইন করুন' : 'নতুন অ্যাকাউন্ট খুলুন'}
+          </h2>
+
+          <form onSubmit={handleAuth} className="space-y-4">
+            {!isLogin && (
+              <div className="relative">
+                <Mail className="absolute left-3 top-3 text-gray-400" size={20} />
+                <input
+                  type="email"
+                  placeholder="ইমেইল ঠিকানা"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 outline-none"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+            )}
+
+            <div className="relative">
+              <User className="absolute left-3 top-3 text-gray-400" size={20} />
+              <input
+                type="text"
+                placeholder="ইউজারনেম"
+                className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 outline-none"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="relative">
+              <Lock className="absolute left-3 top-3 text-gray-400" size={20} />
+              <input
+                type="password"
+                placeholder="পাসওয়ার্ড"
+                className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 outline-none"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-green-600 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-green-700 transition-all flex items-center justify-center gap-2"
+            >
+              {loading ? <Loader2 className="animate-spin" /> : isLogin ? 'লগইন করুন' : 'নিবন্ধন করুন'}
+            </button>
+          </form>
+
+          <div className="mt-6 text-center">
+            <button onClick={() => setIsLogin(!isLogin)} className="text-green-600 font-semibold hover:underline">
+              {isLogin ? 'নতুন অ্যাকাউন্ট খুলতে চান? এখানে ক্লিক করুন' : 'আগে থেকেই অ্যাকাউন্ট আছে? লগইন করুন'}
+            </button>
           </div>
         </div>
-        {renderContent()}
       </div>
     </div>
   );
 };
-
-interface InputProps {
-    id: string;
-    label: string;
-    type: string;
-    value: string;
-    onChange: (value: string) => void;
-    required?: boolean;
-}
-
-const Input: React.FC<InputProps> = ({ id, label, type, value, onChange, required = false }) => (
-    <div>
-      <label htmlFor={id} className="text-xs font-bold text-gray-500 mb-1 block">{label}</label>
-      <input
-        id={id}
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-gray-50/50 outline-none focus:border-green-500 transition-all font-bold text-gray-900"
-        required={required}
-        autoComplete="off"
-      />
-    </div>
-);
 
 export default AuthModule;
