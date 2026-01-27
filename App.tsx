@@ -4,7 +4,7 @@ import {
   ShoppingBag, ShoppingCart, Users, Wallet, LogOut 
 } from 'lucide-react';
 
-import { supabase } from './lib/supabase';
+import { supabase } from './services/supabaseClient';
 import { useData } from './hooks/usedata'; 
 
 import AuthModule from './components/AuthModule';
