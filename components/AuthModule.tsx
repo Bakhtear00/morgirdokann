@@ -18,50 +18,44 @@ const AuthModule: React.FC<AuthModuleProps> = ({ onAuthSuccess }) => {
   // পাসওয়ার্ড মাস্কিং সাফিক্স (সুপাবেসের ৬ ক্যারেক্টার লিমিট পার করার জন্য)
   const secretSuffix = "_dokan"; 
 
-  const handleAuth = async (e: React.FormEvent) => {
+const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    // ইউজার যা টাইপ করবে তার সাথে '_dokan' যোগ করে ফাইনাল পাসওয়ার্ড তৈরি
-    const finalPassword = password + secretSuffix;
+    // ১ বা ২ সংখ্যার পাসওয়ার্ডকে ৬ ক্যারেক্টার বানানো
+    const finalPassword = password.length < 6 ? password + "_dokan" : password;
 
     try {
       if (isLogin) {
-        // ১. ইউজারনেম দিয়ে ইমেইল খুঁজে বের করা
+        // লগইন করার সময় প্রোফাইল চেক
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('email')
           .eq('username', username)
           .single();
 
-        if (profileError || !profile) {
-          throw new Error('এই ইউজারনেমটি খুঁজে পাওয়া যায়নি!');
-        }
+        if (profileError || !profile) throw new Error('ইউজারনেমটি খুঁজে পাওয়া যায়নি!');
 
-        // ২. প্রাপ্ত ইমেইল এবং মাস্কড পাসওয়ার্ড দিয়ে লগইন করা
         const { error: loginError } = await supabase.auth.signInWithPassword({
           email: profile.email,
           password: finalPassword,
         });
 
         if (loginError) throw new Error('পাসওয়ার্ড সঠিক নয়!');
-        
-        showToast('সাফল্যের সাথে লগইন হয়েছে!', 'success');
         onAuthSuccess();
       } else {
-        // ৩. সাইন-আপ করার সময় ইমেইল এবং মাস্কড পাসওয়ার্ড ব্যবহার করা
+        // সাইন-আপ করার সময়
         const { error: signUpError } = await supabase.auth.signUp({
-          email,
-          password: finalPassword,
+          email: email, // আপনি যে জিমেইল দিবেন
+          password: finalPassword, // এটি এখন ৬ ডিজিট হয়ে যাবে
           options: {
-            data: { username } // প্রোফাইল টেবিলের ট্রিগারের জন্য
+            data: { username: username }
           }
         });
 
         if (signUpError) throw signUpError;
-        
-        showToast('নিবন্ধন সফল হয়েছে! এখন ওই ইউজারনেম ও পাসওয়ার্ড দিয়ে লগইন করুন।', 'success');
-        setIsLogin(true); // সরাসরি লগইন ফর্মে পাঠিয়ে দেওয়া
+        showToast('আইডি তৈরি হয়েছে! এখন লগইন করুন।', 'success');
+        setIsLogin(true);
       }
     } catch (error: any) {
       showToast(error.message, 'error');
@@ -70,6 +64,7 @@ const AuthModule: React.FC<AuthModuleProps> = ({ onAuthSuccess }) => {
     }
   };
 
+   
   return (
     <div className="min-h-screen bg-green-50 flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-white rounded-3xl shadow-xl overflow-hidden">
