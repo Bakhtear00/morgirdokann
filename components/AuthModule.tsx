@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase } from '../services/supabaseClient';
 import { LogIn, UserPlus, Mail, User, Lock, Loader2 } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
 
