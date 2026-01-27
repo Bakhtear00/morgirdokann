@@ -15,9 +15,15 @@ const AuthModule: React.FC<AuthModuleProps> = ({ onAuthSuccess }) => {
   const [password, setPassword] = useState('');
   const { showToast } = useToast();
 
+  // পাসওয়ার্ড মাস্কিং সাফিক্স (সুপাবেসের ৬ ক্যারেক্টার লিমিট পার করার জন্য)
+  const secretSuffix = "_dokan"; 
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
+    // ইউজার যা টাইপ করবে তার সাথে '_dokan' যোগ করে ফাইনাল পাসওয়ার্ড তৈরি
+    const finalPassword = password + secretSuffix;
 
     try {
       if (isLogin) {
@@ -29,32 +35,34 @@ const AuthModule: React.FC<AuthModuleProps> = ({ onAuthSuccess }) => {
           .single();
 
         if (profileError || !profile) {
-          throw new Error('ইউজারনেমটি সঠিক নয়!');
+          throw new Error('এই ইউজারনেমটি খুঁজে পাওয়া যায়নি!');
         }
 
-        // ২. প্রাপ্ত ইমেইল দিয়ে লগইন করা
+        // ২. প্রাপ্ত ইমেইল এবং মাস্কড পাসওয়ার্ড দিয়ে লগইন করা
         const { error: loginError } = await supabase.auth.signInWithPassword({
           email: profile.email,
-          password,
+          password: finalPassword,
         });
 
-        if (loginError) throw loginError;
+        if (loginError) throw new Error('পাসওয়ার্ড সঠিক নয়!');
+        
         showToast('সাফল্যের সাথে লগইন হয়েছে!', 'success');
+        onAuthSuccess();
       } else {
-        // সাইন-আপ লজিক
+        // ৩. সাইন-আপ করার সময় ইমেইল এবং মাস্কড পাসওয়ার্ড ব্যবহার করা
         const { error: signUpError } = await supabase.auth.signUp({
           email,
-          password,
+          password: finalPassword,
           options: {
-            data: { username } // মেটাডাটাতে ইউজারনেম পাঠানো হচ্ছে
+            data: { username } // প্রোফাইল টেবিলের ট্রিগারের জন্য
           }
         });
 
         if (signUpError) throw signUpError;
-        showToast('অ্যাকাউন্ট তৈরি হয়েছে! এখন লগইন করুন।', 'success');
-        setIsLogin(true);
+        
+        showToast('নিবন্ধন সফল হয়েছে! এখন ওই ইউজারনেম ও পাসওয়ার্ড দিয়ে লগইন করুন।', 'success');
+        setIsLogin(true); // সরাসরি লগইন ফর্মে পাঠিয়ে দেওয়া
       }
-      onAuthSuccess();
     } catch (error: any) {
       showToast(error.message, 'error');
     } finally {
@@ -73,7 +81,7 @@ const AuthModule: React.FC<AuthModuleProps> = ({ onAuthSuccess }) => {
           </div>
           
           <h2 className="text-2xl font-bold text-center text-gray-800 mb-8">
-            {isLogin ? 'স্বাগতম! লগইন করুন' : 'নতুন অ্যাকাউন্ট খুলুন'}
+            {isLogin ? 'লগইন করুন' : 'নতুন আইডি খুলুন'}
           </h2>
 
           <form onSubmit={handleAuth} className="space-y-4">
@@ -82,7 +90,7 @@ const AuthModule: React.FC<AuthModuleProps> = ({ onAuthSuccess }) => {
                 <Mail className="absolute left-3 top-3 text-gray-400" size={20} />
                 <input
                   type="email"
-                  placeholder="ইমেইল ঠিকানা"
+                  placeholder="আপনার ইমেইল"
                   className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 outline-none"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -95,7 +103,7 @@ const AuthModule: React.FC<AuthModuleProps> = ({ onAuthSuccess }) => {
               <User className="absolute left-3 top-3 text-gray-400" size={20} />
               <input
                 type="text"
-                placeholder="ইউজারনেম"
+                placeholder="ইউজারনেম (১, ২ বা নাম)"
                 className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 outline-none"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -107,7 +115,7 @@ const AuthModule: React.FC<AuthModuleProps> = ({ onAuthSuccess }) => {
               <Lock className="absolute left-3 top-3 text-gray-400" size={20} />
               <input
                 type="password"
-                placeholder="পাসওয়ার্ড"
+                placeholder="পাসওয়ার্ড (১ বা ২ সংখ্যার)"
                 className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 outline-none"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -120,13 +128,21 @@ const AuthModule: React.FC<AuthModuleProps> = ({ onAuthSuccess }) => {
               disabled={loading}
               className="w-full bg-green-600 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-green-700 transition-all flex items-center justify-center gap-2"
             >
-              {loading ? <Loader2 className="animate-spin" /> : isLogin ? 'লগইন করুন' : 'নিবন্ধন করুন'}
+              {loading ? <Loader2 className="animate-spin" /> : isLogin ? 'লগইন করুন' : 'আইডি তৈরি করুন'}
             </button>
           </form>
 
           <div className="mt-6 text-center">
-            <button onClick={() => setIsLogin(!isLogin)} className="text-green-600 font-semibold hover:underline">
-              {isLogin ? 'নতুন অ্যাকাউন্ট খুলতে চান? এখানে ক্লিক করুন' : 'আগে থেকেই অ্যাকাউন্ট আছে? লগইন করুন'}
+            <button 
+              onClick={() => {
+                setIsLogin(!isLogin);
+                setEmail('');
+                setUsername('');
+                setPassword('');
+              }} 
+              className="text-green-600 font-semibold hover:underline"
+            >
+              {isLogin ? 'আইডি নেই? নতুন খুলুন' : 'আগে থেকেই আইডি আছে? লগইন করুন'}
             </button>
           </div>
         </div>
