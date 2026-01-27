@@ -17,53 +17,54 @@ const AuthModule: React.FC<AuthModuleProps> = ({ onAuthSuccess }) => {
 
   const secretSuffix = "_dokan"; 
 
-  const handleAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+const handleAuth = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setLoading(true);
 
-    const finalPassword = password + secretSuffix;
+  // পাসওয়ার্ড মাস্কিং
+  const finalPassword = password + secretSuffix;
 
-    try {
-      if (isLogin) {
-        // ১. ইউজারনেম দিয়ে ইমেইল খুঁজে বের করা (এটি আপনার কোডে মিসিং ছিল)
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('email')
-          .eq('username', username)
-          .single();
+  try {
+    if (isLogin) {
+      // ইউজারনেম দিয়ে প্রোফাইল থেকে ইমেইল খুঁজে আনা
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('username', username)
+        .single();
 
-        if (profileError || !profile) {
-          throw new Error('এই ইউজারনেমটি পাওয়া যায়নি!');
-        }
-
-        // ২. প্রাপ্ত ইমেইল দিয়ে লগইন
-        const { error: loginError } = await supabase.auth.signInWithPassword({
-          email: profile.email,
-          password: finalPassword,
-        });
-
-        if (loginError) throw new Error('পাসওয়ার্ড সঠিক নয়!');
-        onAuthSuccess();
-      } else {
-        // সাইন-আপ করার সময়
-        const { error: signUpError } = await supabase.auth.signUp({
-          email,
-          password: finalPassword,
-          options: {
-            data: { username: username }
-          }
-        });
-
-        if (signUpError) throw signUpError;
-        showToast('আইডি তৈরি হয়েছে! এখন লগইন করুন।', 'success');
-        setIsLogin(true);
+      if (profileError || !profile) {
+        throw new Error('এই ইউজারনেমটি পাওয়া যায়নি!');
       }
-    } catch (error: any) {
-      showToast(error.message, 'error');
-    } finally {
-      setLoading(false);
+
+      // প্রাপ্ত ইমেইল দিয়ে লগইন
+      const { error: loginError } = await supabase.auth.signInWithPassword({
+        email: profile.email,
+        password: finalPassword,
+      });
+
+      if (loginError) throw new Error('পাসওয়ার্ড সঠিক নয়!');
+      onAuthSuccess();
+    } else {
+      // নতুন আইডি খোলার সময়
+      const { error: signUpError } = await supabase.auth.signUp({
+        email,
+        password: finalPassword,
+        options: {
+          data: { username }
+        }
+      });
+
+      if (signUpError) throw signUpError;
+      showToast('আইডি তৈরি হয়েছে! এখন লগইন করুন।', 'success');
+      setIsLogin(true);
     }
-  };
+  } catch (error: any) {
+    showToast(error.message, 'error');
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-green-50 flex items-center justify-center p-4">
