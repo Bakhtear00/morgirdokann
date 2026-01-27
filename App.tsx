@@ -19,6 +19,7 @@ import DenominationModule from './components/DenominationModule';
 
 import { ToastProvider } from './contexts/ToastContext';
 
+
 const AppContent: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
