@@ -25,7 +25,7 @@ const AuthModule: React.FC<AuthModuleProps> = ({ onAuthSuccess }) => {
 
     try {
       if (isLogin) {
-        // ১. ইউজারনেম দিয়ে ইমেইল খোঁজা
+        // ১. ইউজারনেম দিয়ে প্রোফাইল থেকে ইমেইল খুঁজে বের করা
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('email')
@@ -36,7 +36,7 @@ const AuthModule: React.FC<AuthModuleProps> = ({ onAuthSuccess }) => {
           throw new Error('এই ইউজারনেমটি পাওয়া যায়নি!');
         }
 
-        // ২. লগইন করা
+        // ২. প্রাপ্ত ইমেইল এবং মাস্কড পাসওয়ার্ড দিয়ে লগইন করা
         const { error: loginError } = await supabase.auth.signInWithPassword({
           email: profile.email,
           password: finalPassword,
@@ -45,15 +45,17 @@ const AuthModule: React.FC<AuthModuleProps> = ({ onAuthSuccess }) => {
         if (loginError) throw new Error('পাসওয়ার্ড সঠিক নয়!');
         onAuthSuccess();
       } else {
-        // সাইন-আপ করা
+        // ৩. সাইন-আপ করার সময়
         const { error: signUpError } = await supabase.auth.signUp({
-          email,
+          email: email,
           password: finalPassword,
-          options: { data: { username } }
+          options: {
+            data: { username: username }
+          }
         });
 
         if (signUpError) throw signUpError;
-        showToast('আইডি তৈরি হয়েছে! এখন লগইন করুন।', 'success');
+        showToast('নিবন্ধন সফল হয়েছে! এখন লগইন করুন।', 'success');
         setIsLogin(true);
       }
     } catch (error: any) {
@@ -96,7 +98,7 @@ const AuthModule: React.FC<AuthModuleProps> = ({ onAuthSuccess }) => {
               <User className="absolute left-3 top-3 text-gray-400" size={20} />
               <input
                 type="text"
-                placeholder="ইউজারনেম"
+                placeholder="ইউজারনেম (যেমন: ১ বা ২)"
                 className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 outline-none"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
