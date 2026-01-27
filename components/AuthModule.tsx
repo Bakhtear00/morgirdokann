@@ -15,27 +15,28 @@ const AuthModule: React.FC<AuthModuleProps> = ({ onAuthSuccess }) => {
   const [password, setPassword] = useState('');
   const { showToast } = useToast();
 
-  // পাসওয়ার্ড মাস্কিং সাফিক্স (সুপাবেসের ৬ ক্যারেক্টার লিমিট পার করার জন্য)
   const secretSuffix = "_dokan"; 
 
-const handleAuth = async (e: React.FormEvent) => {
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    // ১ বা ২ সংখ্যার পাসওয়ার্ডকে ৬ ক্যারেক্টার বানানো
-    const finalPassword = password.length < 6 ? password + "_dokan" : password;
+    const finalPassword = password + secretSuffix;
 
     try {
       if (isLogin) {
-        // লগইন করার সময় প্রোফাইল চেক
+        // ১. ইউজারনেম দিয়ে ইমেইল খুঁজে বের করা (এটি আপনার কোডে মিসিং ছিল)
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('email')
           .eq('username', username)
           .single();
 
-        if (profileError || !profile) throw new Error('ইউজারনেমটি খুঁজে পাওয়া যায়নি!');
+        if (profileError || !profile) {
+          throw new Error('এই ইউজারনেমটি পাওয়া যায়নি!');
+        }
 
+        // ২. প্রাপ্ত ইমেইল দিয়ে লগইন
         const { error: loginError } = await supabase.auth.signInWithPassword({
           email: profile.email,
           password: finalPassword,
@@ -46,8 +47,8 @@ const handleAuth = async (e: React.FormEvent) => {
       } else {
         // সাইন-আপ করার সময়
         const { error: signUpError } = await supabase.auth.signUp({
-          email: email, // আপনি যে জিমেইল দিবেন
-          password: finalPassword, // এটি এখন ৬ ডিজিট হয়ে যাবে
+          email,
+          password: finalPassword,
           options: {
             data: { username: username }
           }
@@ -64,7 +65,6 @@ const handleAuth = async (e: React.FormEvent) => {
     }
   };
 
-   
   return (
     <div className="min-h-screen bg-green-50 flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-white rounded-3xl shadow-xl overflow-hidden">
@@ -94,12 +94,11 @@ const handleAuth = async (e: React.FormEvent) => {
               </div>
             )}
 
-            
             <div className="relative">
               <User className="absolute left-3 top-3 text-gray-400" size={20} />
               <input
                 type="text"
-                placeholder="ইউজারনেম (১, ২ বা নাম)"
+                placeholder="ইউজারনেম"
                 className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 outline-none"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -107,7 +106,6 @@ const handleAuth = async (e: React.FormEvent) => {
               />
             </div>
 
-            
             <div className="relative">
               <Lock className="absolute left-3 top-3 text-gray-400" size={20} />
               <input
