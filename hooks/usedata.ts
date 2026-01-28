@@ -28,7 +28,7 @@ export const useData = (isLoggedIn: boolean, isSettingUp: boolean) => {
 
     setLoading(true);
     try {
-      const [purchases, sales, expenses, dues, cashLogs, lotHistory, resets] = await Promise.all([
+      const [allPurchases, allSales, expenses, dues, cashLogs, lotHistory, resets] = await Promise.all([
         DataService.getPurchases(),
         DataService.getSales(),
         DataService.getExpenses(),
@@ -38,11 +38,32 @@ export const useData = (isLoggedIn: boolean, isSettingUp: boolean) => {
         DataService.getResets()
       ]);
 
-      const stock = DataService.calculateStock(purchases, sales);
+      // লজিক: রিসেট টাইমের পরের ডেটাগুলো ফিল্টার করা (যাতে আগের লট উধাও থাকে)
+      const currentPurchases = allPurchases.filter(p => {
+        const resetTime = resets[p.type] ? new Date(resets[p.type]) : new Date(0);
+        return new Date(p.created_at || 0) > resetTime;
+      });
+
+      const currentSales = allSales.filter(s => {
+        const resetTime = resets[s.type] ? new Date(resets[s.type]) : new Date(0);
+        return new Date(s.created_at || 0) > resetTime;
+      });
+
+      // সুরক্ষিত স্টক ক্যালকুলেশন
+      const stock = DataService.calculateStock(currentPurchases, currentSales);
       
-      setData({ purchases, sales, expenses, dues, cashLogs, stock, resets, lotHistory });
+      setData({ 
+        purchases: currentPurchases, 
+        sales: currentSales, 
+        expenses, 
+        dues, 
+        cashLogs, 
+        stock, 
+        resets, 
+        lotHistory 
+      });
     } catch (error) {
-      console.error("Failed to fetch data:", error);
+      console.error("ডেটা লোড করতে সমস্যা হয়েছে:", error);
     } finally {
       setLoading(false);
     }
