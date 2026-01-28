@@ -1,38 +1,40 @@
 import { supabase } from './supabaseClient';
-import { Purchase, Sale, Expense, Due, CashLog, LotArchive } from '../types';
+
+// এখানে সব টাইপ লিখে দিলাম যাতে ক্রস না আসে
+export interface Purchase { id?: string; user_id?: string; date: string; type: string; pieces: number; kg: number; rate: number; total: number; created_at?: string; }
+export interface Sale { id?: string; user_id?: string; date: string; type: string; pieces: number; kg: number; rate: number; total: number; mortality: number; created_at?: string; }
+export interface Expense { id?: string; user_id?: string; date: string; category: string; amount: number; note?: string; created_at?: string; }
+export interface Due { id?: string; user_id?: string; customer_name: string; amount: number; mobile?: string; status: string; created_at?: string; }
+export interface CashLog { id?: string; user_id?: string; date: string; amount: number; type: 'in' | 'out'; note?: string; created_at?: string; }
+export interface LotArchive { id?: string; user_id?: string; type: string; total_purchase: number; total_sale: number; profit: number; pieces_at_reset: number; date: string; }
 
 export const DataService = {
-  // ১. কেনাকাটা ডাটা আনা
+  // ডাটা আনার ফাংশনগুলো
   async getPurchases(): Promise<Purchase[]> {
     const { data } = await supabase.from('purchases').select('*').order('date', { ascending: false });
     return data || [];
   },
 
-  // ২. বিক্রয় ডাটা আনা
   async getSales(): Promise<Sale[]> {
     const { data } = await supabase.from('sales').select('*').order('date', { ascending: false });
     return data || [];
   },
 
-  // ৩. খরচ ডাটা আনা
   async getExpenses(): Promise<Expense[]> {
     const { data } = await supabase.from('expenses').select('*').order('date', { ascending: false });
     return data || [];
   },
 
-  // ৪. বাকি ডাটা আনা
   async getDues(): Promise<Due[]> {
     const { data } = await supabase.from('dues').select('*').order('created_at', { ascending: false });
     return data || [];
   },
 
-  // ৫. ক্যাশ বক্স ডাটা আনা
   async getCashLogs(): Promise<CashLog[]> {
     const { data } = await supabase.from('cash_logs').select('*').order('created_at', { ascending: false });
     return data || [];
   },
 
-  // ৬. লট রিসেট টাইম আনা
   async getResets() {
     const { data } = await supabase.from('resets').select('type, reset_at');
     const resetMap: { [key: string]: string } = {};
@@ -40,13 +42,12 @@ export const DataService = {
     return resetMap;
   },
 
-  // ৭. লট আর্কাইভ (ইতিহাস) আনা
   async getLotHistory(): Promise<LotArchive[]> {
     const { data } = await supabase.from('lot_archive').select('*').order('date', { ascending: false });
     return data || [];
   },
 
-  // ৮. লট রিসেট করার মূল ফাংশন (যেখানে ক্রস আসছিল)
+  // লট রিসেট ফাংশন
   async resetLot(type: string, currentStock: any, totalPurchase: number, totalSale: number) {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
@@ -64,14 +65,8 @@ export const DataService = {
       date: new Date().toISOString()
     }]);
 
-    // রিসেট টাইম আপডেট করা
-    const { data: existing } = await supabase
-      .from('resets')
-      .select('id')
-      .eq('user_id', session.user.id)
-      .eq('type', type)
-      .single();
-
+    // রিসেট টাইম আপডেট
+    const { data: existing } = await supabase.from('resets').select('id').eq('user_id', session.user.id).eq('type', type).single();
     if (existing) {
       await supabase.from('resets').update({ reset_at: new Date().toISOString() }).eq('id', existing.id);
     } else {
@@ -79,23 +74,20 @@ export const DataService = {
     }
   },
 
-  // ৯. স্টক ক্যালকুলেশন
+  // স্টক ক্যালকুলেশন
   calculateStock(purchases: Purchase[], sales: Sale[]) {
     const stock: { [key: string]: { pieces: number; kg: number; dead: number } } = {};
-    
     purchases.forEach(p => {
       if (!stock[p.type]) stock[p.type] = { pieces: 0, kg: 0, dead: 0 };
       stock[p.type].pieces += Number(p.pieces) || 0;
       stock[p.type].kg += Number(p.kg) || 0;
     });
-
     sales.forEach(s => {
       if (!stock[s.type]) stock[s.type] = { pieces: 0, kg: 0, dead: 0 };
       stock[s.type].pieces -= (Number(s.pieces) || 0) + (Number(s.mortality) || 0);
       stock[s.type].kg -= Number(s.kg) || 0;
       stock[s.type].dead += Number(s.mortality) || 0;
     });
-
     return stock;
   }
 };
