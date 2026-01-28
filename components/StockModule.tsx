@@ -1,15 +1,18 @@
 import React, { useMemo, useState, useRef } from 'react';
-import { Package, History, TrendingUp, TrendingDown, RotateCcw } from 'lucide-react';
-import { POULTRY_TYPES } from '../constants';
+import { Package, RotateCcw, TrendingUp, TrendingDown } from 'lucide-react';
+// সার্ভিস থেকে টাইপ ইম্পোর্ট
+import type { Purchase, Sale, LotArchive } from '../services/dataService';
 
 interface StockModuleProps {
   stock: any;
-  purchases: any[];
-  sales: any[];
+  purchases: Purchase[];
+  sales: Sale[];
   resets: any;
-  lotHistory: any[];
+  lotHistory: LotArchive[];
   onResetLot?: (type: string) => void;
 }
+// বাকি কোড যা ছিল তাই থাকবে...
+
 
 const StockModule: React.FC<StockModuleProps> = ({ stock, purchases = [], sales = [], resets = {}, lotHistory = [], onResetLot }) => {
   const [resettingType, setResettingType] = useState<string | null>(null);
