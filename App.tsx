@@ -44,10 +44,10 @@ const AppContent: React.FC = () => {
   const menuNames: { [key: string]: string } = {
     purchase: 'কেনাকাটা',
     sales: 'বিক্রয়',
-    stock: 'স্টক',
+    stock: 'স্টক ও লট',
     expense: 'খরচ',
     due: 'বাকি',
-    cash: 'ক্যাশ',
+    cash: 'ক্যাশ বক্স',
     calc: 'ক্যালকুলেটর',
     reports: 'রিপোর্ট'
   };
@@ -94,7 +94,19 @@ const AppContent: React.FC = () => {
           <div className="max-w-7xl mx-auto">
             {activeTab === 'purchase' && <PurchaseModule purchases={data.purchases || []} refresh={refresh} />}
             {activeTab === 'sales' && <SalesModule sales={data.sales || []} refresh={refresh} />}
-            {activeTab === 'stock' && <StockModule stock={data.stock || {}} refresh={refresh} />}
+            
+            {/* StockModule ফিক্স করা হয়েছে: সব প্রয়োজনীয় ডেটা পাঠানো হচ্ছে */}
+            {activeTab === 'stock' && (
+              <StockModule 
+                stock={data.stock || {}} 
+                purchases={data.purchases || []}
+                sales={data.sales || []}
+                resets={data.resets || {}}
+                lotHistory={data.lotHistory || []}
+                refresh={refresh} 
+              />
+            )}
+
             {activeTab === 'expense' && <ExpenseModule expenses={data.expenses || []} refresh={refresh} />}
             {activeTab === 'due' && <DueModule dues={data.dues || []} refresh={refresh} />}
             {activeTab === 'cash' && <CashModule cashLogs={data.cashLogs || []} refresh={refresh} />}
