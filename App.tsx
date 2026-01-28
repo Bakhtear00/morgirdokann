@@ -95,15 +95,15 @@ const AppContent: React.FC = () => {
             {activeTab === 'purchase' && <PurchaseModule purchases={data.purchases || []} refresh={refresh} />}
             {activeTab === 'sales' && <SalesModule sales={data.sales || []} refresh={refresh} />}
             
-            {activeTab === 'stock' && (
-              <StockModule 
-                stock={data.stock || {}} 
-                purchases={data.allPurchases || []} 
-                sales={data.allSales || []}
-                resets={data.resets || {}}
-                lotHistory={data.lotHistory || []}
-              />
-            )}
+           {activeTab === 'stock' && (
+  <StockModule 
+    stock={data.stock} 
+    purchases={data.purchases} 
+    sales={data.sales} 
+    resets={data.resets} 
+    lotHistory={data.lotHistory} 
+  />
+)}
 
             {activeTab === 'expense' && <ExpenseModule expenses={data.expenses || []} refresh={refresh} />}
             {activeTab === 'due' && <DueModule dues={data.dues || []} refresh={refresh} />}
@@ -116,13 +116,13 @@ const AppContent: React.FC = () => {
               />
             )}
 
-            {activeTab === 'reports' && (
-              <ReportModule 
-                allPurchases={data.allPurchases || []} 
-                allSales={data.allSales || []} 
-                expenses={data.expenses || []} 
-              />
-            )}
+           {activeTab === 'reports' && (
+  <ReportModule 
+    purchases={data.purchases} 
+    sales={data.sales} 
+    expenses={data.expenses} 
+  />
+)}
           </div>
         )}
       </main>
