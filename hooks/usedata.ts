@@ -1,6 +1,7 @@
-// @ts-nocheck
 import { useState, useEffect, useCallback } from 'react';
 import { DataService } from '../services/dataService';
+// শুধু এই লাইনটি সাবধানে খেয়াল করুন
+import type { Purchase, Sale, Expense, Due, LotArchive } from '../services/dataService';
 
 export const useData = (isLoggedIn: boolean, isSettingUp: boolean) => {
   const [loading, setLoading] = useState(true);
