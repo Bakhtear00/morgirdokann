@@ -1,100 +1,107 @@
-import React, { useMemo } from 'react';
-import { Package, History, ArrowUpRight, ArrowDownRight, CircleDollarSign } from 'lucide-react';
-import { POULTRY_TYPES } from '../constants.tsx';
+import React, { useMemo, useState } from 'react';
+import { Package, RotateCcw, TrendingUp, TrendingDown, DollarSign, AlertTriangle } from 'lucide-react';
+import { POULTRY_TYPES } from '../constants';
 import { Purchase, Sale, LotArchive } from '../types';
 
 interface StockModuleProps {
-  stock: { [key: string]: { pieces: number; kg: number; dead: number; } };
+  stock: any;
   purchases: Purchase[];
   sales: Sale[];
   resets: { [key: string]: string };
   lotHistory: LotArchive[];
+  onHardReset?: () => void; // মাস্টার রিসেট ফাংশন
 }
 
-const StockModule: React.FC<StockModuleProps> = ({ stock, purchases, sales, resets, lotHistory }) => {
+const StockModule: React.FC<StockModuleProps> = ({ stock, purchases, sales, resets, lotHistory, onHardReset }) => {
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
-  // বর্তমান লটের হিসাব করার লজিক
-  const currentLotsSummary = useMemo(() => {
-    const summary: { [key: string]: any } = {};
-    
+  // লট অনুযায়ী কেনা-বেচা এবং লাভ/লস হিসাব
+  const lotStats = useMemo(() => {
+    const stats: any = {};
     POULTRY_TYPES.forEach(type => {
       const resetTime = resets[type] ? new Date(resets[type]).getTime() : 0;
-
-      // ফিল্টার: শুধুমাত্র লাস্ট রিসেট এর পরের ডেটা
-      const lotPurchases = purchases.filter(p => p.type === type && new Date(p.created_at || p.date).getTime() > resetTime);
-      const lotSales = sales.filter(s => s.type === type && new Date(s.created_at || s.date).getTime() > resetTime);
-
-      const totalBuy = lotPurchases.reduce((sum, p) => sum + (Number(p.total) || 0), 0);
-      const totalSell = lotSales.reduce((sum, s) => sum + (Number(s.total) || 0), 0);
       
-      summary[type] = {
-        buyAmount: totalBuy,
-        sellAmount: totalSell,
-        profit: totalSell - totalBuy,
-        buyCount: lotPurchases.reduce((sum, p) => sum + (Number(p.pieces) || 0), 0),
-        sellCount: lotSales.reduce((sum, s) => sum + (Number(s.pieces) || 0), 0)
+      const currentPurchases = (purchases || []).filter(p => p.type === type && new Date(p.created_at || p.date).getTime() > resetTime);
+      const currentSales = (sales || []).filter(s => s.type === type && new Date(s.created_at || s.date).getTime() > resetTime);
+
+      const totalBuy = currentPurchases.reduce((sum, p) => sum + (Number(p.total) || 0), 0);
+      const totalSell = currentSales.reduce((sum, s) => sum + (Number(s.total) || 0), 0);
+
+      stats[type] = {
+        buy: totalBuy,
+        sell: totalSell,
+        profit: totalSell - totalBuy
       };
     });
-    return summary;
+    return stats;
   }, [purchases, sales, resets]);
 
-  const totalStockPieces = Object.values(stock || {}).reduce((acc, curr) => acc + (curr.pieces || 0), 0);
+  const totalStock = Object.values(stock || {}).reduce((acc: number, curr: any) => acc + (curr.pieces || 0), 0);
 
   return (
-    <div className="space-y-8 animate-fade-in pb-12">
-      {/* টপ কার্ড: দোকানের মোট মজুদ */}
-      <div className="bg-gradient-to-br from-green-600 to-teal-700 p-8 rounded-[2.5rem] text-white shadow-xl text-center border-b-8 border-teal-900/50">
-          <p className="text-green-100 text-xs font-black uppercase tracking-[0.2em] mb-2">দোকানের মোট মজুদ মুরগি</p>
-          <p className="text-6xl font-black">{new Intl.NumberFormat('bn-BD').format(totalStockPieces)} <span className="text-xl font-normal opacity-70">টি</span></p>
-      </div>
+    <div className="space-y-6 animate-fade-in pb-20">
       
+      {/* ১. টপ বড় কার্ড (আপনার ছবির মতো ডিজাইন) */}
+      <div className="bg-[#10b981] p-8 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden">
+        <div className="relative z-10 flex justify-between items-center">
+          <div className="text-left">
+            <h2 className="text-3xl font-black mb-4">দোকানের মোট মুরগি</h2>
+            <div className="flex items-baseline gap-4">
+              <span className="text-7xl font-black tracking-tighter">
+                {new Intl.NumberFormat('bn-BD').format(totalStock)}
+              </span>
+              <span className="text-3xl font-bold opacity-80">টি</span>
+            </div>
+          </div>
+          <div className="hidden md:block bg-white/20 p-6 rounded-3xl backdrop-blur-md">
+            <Package size={80} className="text-white" />
+          </div>
+        </div>
+        
+        {/* মাস্টার রিসেট বাটন (কোণায়) */}
+        <button 
+          onClick={() => setShowResetConfirm(true)}
+          className="absolute bottom-6 right-6 bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full flex items-center gap-2 text-sm font-bold border border-white/20 transition-all"
+        >
+          <RotateCcw size={16} /> মাস্টার রিসেট
+        </button>
+      </div>
+
+      {/* ২. ক্যাটাগরি কার্ডসমূহ (বড় এবং পরিষ্কার) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {POULTRY_TYPES.map(type => {
-          const s = stock[type] || { pieces: 0, kg: 0, dead: 0 };
-          const lot = currentLotsSummary[type];
-          const isProfit = lot.profit >= 0;
+          const s = stock[type] || { pieces: 0, kg: 0 };
+          const stat = lotStats[type];
+          const isProfit = stat.profit >= 0;
 
           return (
-            <div key={type} className="bg-white rounded-[2.5rem] overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition-all">
-              {/* কার্ড হেডার */}
-              <div className="p-6 pb-4 border-b border-dashed border-gray-100">
-                <div className="flex justify-between items-center mb-4">
-                  <h4 className="text-2xl font-black text-gray-800">{type}</h4>
-                  <div className="bg-green-50 text-green-600 p-2 rounded-xl">
-                    <Package size={20} />
-                  </div>
-                </div>
-                <div className="flex justify-between items-end">
-                  <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">বর্তমানে স্টকে আছে</p>
-                  <p className="text-4xl font-black text-indigo-600">
-                    {new Intl.NumberFormat('bn-BD').format(s.pieces)} <span className="text-sm font-bold">টি</span>
-                  </p>
+            <div key={type} className="bg-white rounded-[2.5rem] p-6 shadow-sm border-2 border-gray-50 hover:border-green-100 transition-all">
+              <div className="flex justify-between items-start mb-6">
+                <h3 className="text-2xl font-black text-gray-800">{type}</h3>
+                <div className="bg-green-50 p-3 rounded-2xl text-green-600">
+                  <Package size={24} />
                 </div>
               </div>
 
-              {/* চলমান লটের হিসাব */}
-              <div className="p-6 bg-gray-50/50 space-y-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <CircleDollarSign size={14} className="text-gray-400" />
-                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">চলমান লটের হিসাব</span>
-                </div>
-                
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500 font-bold">মোট কেনা:</span>
-                  <span className="font-black text-gray-700">৳{new Intl.NumberFormat('bn-BD').format(lot.buyAmount)}</span>
-                </div>
-                
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500 font-bold">মোট বিক্রি:</span>
-                  <span className="font-black text-gray-700">৳{new Intl.NumberFormat('bn-BD').format(lot.sellAmount)}</span>
-                </div>
+              <div className="text-center mb-6">
+                <p className="text-gray-400 text-xs font-bold uppercase mb-1">বর্তমানে আছে</p>
+                <p className="text-5xl font-black text-gray-800">
+                   {new Intl.NumberFormat('bn-BD').format(s.pieces)} <span className="text-xl">টি</span>
+                </p>
+              </div>
 
-                <div className={`mt-4 p-3 rounded-2xl flex justify-between items-center ${isProfit ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                  <span className="text-xs font-black uppercase">{isProfit ? 'বর্তমান লাভ' : 'বর্তমান লস'}</span>
-                  <div className="flex items-center gap-1">
-                    {isProfit ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
-                    <span className="text-lg font-black">৳{new Intl.NumberFormat('bn-BD').format(Math.abs(lot.profit))}</span>
-                  </div>
+              <div className="space-y-3 pt-4 border-t border-dashed">
+                <div className="flex justify-between text-sm font-bold">
+                  <span className="text-gray-400">মোট ক্রয়:</span>
+                  <span className="text-gray-700">৳{stat.buy.toLocaleString('bn-BD')}</span>
+                </div>
+                <div className="flex justify-between text-sm font-bold">
+                  <span className="text-gray-400">মোট বিক্রয়:</span>
+                  <span className="text-gray-700">৳{stat.sell.toLocaleString('bn-BD')}</span>
+                </div>
+                <div className={`flex justify-between items-center p-3 rounded-2xl mt-2 ${isProfit ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                  <span className="text-xs font-black uppercase">লাভ / লস:</span>
+                  <span className="text-xl font-black italic">৳{stat.profit.toLocaleString('bn-BD')}</span>
                 </div>
               </div>
             </div>
@@ -102,42 +109,52 @@ const StockModule: React.FC<StockModuleProps> = ({ stock, purchases, sales, rese
         })}
       </div>
 
-      {/* লট ইতিহাস টেবিল */}
-      <div className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-gray-100">
-          <h3 className="text-lg font-black text-gray-800 mb-6 flex items-center gap-2 border-b pb-4">
-            <History className="w-5 h-5 text-indigo-500" /> শেষ হওয়া লটের ইতিহাস
-          </h3>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="text-gray-400 text-[10px] uppercase font-black text-left border-b">
-                  <th className="px-4 py-4">টাইপ</th>
-                  <th className="px-4 py-4">তারিখ</th>
-                  <th className="px-4 py-4 text-right">ক্রয়</th>
-                  <th className="px-4 py-4 text-right">বিক্রয়</th>
-                  <th className="px-4 py-4 text-right">লাভ/লস</th>
+      {/* ৩. হিস্ট্রি টেবিল (আপনার ছবির স্টাইল) */}
+      <div className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-gray-100 overflow-hidden">
+        <h3 className="text-lg font-black mb-4 flex items-center gap-2">লট আর্কাইভ</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead className="bg-gray-50">
+              <tr className="text-[10px] font-black uppercase text-gray-400">
+                <th className="px-4 py-3">Type</th>
+                <th className="px-4 py-3 text-right">Sales</th>
+                <th className="px-4 py-3 text-right">Profit</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {lotHistory.map((h, i) => (
+                <tr key={i} className="text-sm font-bold text-gray-700 hover:bg-gray-50">
+                  <td className="px-4 py-4">{h.type}</td>
+                  <td className="px-4 py-4 text-right">৳{h.total_sale.toLocaleString('bn-BD')}</td>
+                  <td className={`px-4 py-4 text-right ${h.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    ৳{h.profit.toLocaleString('bn-BD')}
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {lotHistory.length > 0 ? lotHistory.map((lot) => (
-                  <tr key={lot.id} className="hover:bg-gray-50/50">
-                    <td className="px-4 py-5 font-black text-gray-800">{lot.type}</td>
-                    <td className="px-4 py-5 text-xs font-bold text-gray-400">{new Date(lot.date).toLocaleDateString('bn-BD')}</td>
-                    <td className="px-4 py-5 text-right font-bold">৳{lot.total_purchase.toLocaleString('bn-BD')}</td>
-                    <td className="px-4 py-5 text-right font-bold">৳{lot.total_sale.toLocaleString('bn-BD')}</td>
-                    <td className={`px-4 py-5 text-right font-black ${lot.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      ৳{Math.abs(lot.profit).toLocaleString('bn-BD')}
-                    </td>
-                  </tr>
-                )) : (
-                  <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-gray-300 font-bold italic">কোনো ইতিহাস নেই।</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
+
+      {/* রিসেট কনফার্মেশন পপআপ */}
+      {showResetConfirm && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-white p-8 rounded-[2rem] max-w-sm w-full text-center">
+            <AlertTriangle size={48} className="text-red-500 mx-auto mb-4" />
+            <h2 className="text-xl font-black mb-2">সব রিসেট করবেন?</h2>
+            <p className="text-gray-500 text-sm mb-6 font-bold">এটি করলে বর্তমানের সব লট হিসাব মুছে যাবে। আপনি কি নিশ্চিত?</p>
+            <div className="flex gap-4">
+              <button onClick={() => setShowResetConfirm(false)} className="flex-1 py-3 bg-gray-100 rounded-xl font-bold">বাতিল</button>
+              <button 
+                onClick={() => { onHardReset?.(); setShowResetConfirm(false); }} 
+                className="flex-1 py-3 bg-red-500 text-white rounded-xl font-bold"
+              >
+                হ্যাঁ, রিসেট
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
