@@ -2,20 +2,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { DataService } from '../services/dataService';
 import { Purchase, Sale, Expense, DueRecord, CashLog, LotArchive } from '../types';
 
-interface AppData {
-  purchases: Purchase[];
-  sales: Sale[];
-  expenses: Expense[];
-  dues: DueRecord[];
-  cashLogs: CashLog[];
-  stock: { [key: string]: { pieces: number; kg: number; dead: number; } };
-  resets: { [key: string]: string };
-  lotHistory: LotArchive[];
-}
-
 export const useData = (isLoggedIn: boolean, isSettingUp: boolean) => {
   const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<AppData>({
+  const [data, setData] = useState({
     purchases: [], sales: [], expenses: [], dues: [], cashLogs: [],
     stock: {}, resets: {}, lotHistory: []
   });
@@ -38,7 +27,7 @@ export const useData = (isLoggedIn: boolean, isSettingUp: boolean) => {
         DataService.getResets()
       ]);
 
-      // রিসেট টাইমের পরের ডেটাগুলো ফিল্টার করা (যাতে লট শেষ হলে লিস্ট খালি হয়)
+      // রিসেট টাইমের পরের ডেটা ফিল্টার (যাতে লট শেষ হলে লিস্ট খালি হয়)
       const currentPurchases = allPurchases.filter(p => {
         const resetTime = resets[p.type] ? new Date(resets[p.type]) : new Date(0);
         return new Date(p.created_at || 0) > resetTime;
