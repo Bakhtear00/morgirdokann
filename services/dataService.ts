@@ -189,6 +189,47 @@ export const DataService = {
         stock[s.type].dead += Number(s.mortality) || 0;
       }
     });
+    // services/dataService.ts এর ভেতর এটি যোগ করুন
+async resetLot(type: string, currentStock: any, totalPurchase: number, totalSale: number) {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return;
+
+  const profit = totalSale - totalPurchase;
+
+  // ১. লট আর্কাইভ টেবিল-এ ডাটা সেভ করা
+  await supabase.from('lot_archive').insert([{
+    user_id: session.user.id,
+    type,
+    total_purchase: totalPurchase,
+    total_sale: totalSale,
+    profit,
+    pieces_at_reset: currentStock.pieces,
+    date: new Date().toISOString()
+  }]);
+
+  // ২. রিসেট টাইম আপডেট করা (যাতে আগের কেনা-বেচা আর স্টকে না আসে)
+  const { data: existingReset } = await supabase
+    .from('resets')
+    .select('id')
+    .eq('user_id', session.user.id)
+    .eq('type', type)
+    .single();
+
+  if (existingReset) {
+    await supabase
+      .from('resets')
+      .update({ reset_at: new Date().toISOString() })
+      .eq('id', existingReset.id);
+  } else {
+    await supabase
+      .from('resets')
+      .insert([{
+        user_id: session.user.id,
+        type,
+        reset_at: new Date().toISOString()
+      }]);
+  }
+}
     return stock;
   }
 };
