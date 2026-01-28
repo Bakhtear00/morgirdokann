@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   BarChart3, Calculator, CreditCard, Loader2, Package, 
@@ -87,50 +88,4 @@ const AppContent: React.FC = () => {
       <main className="flex-1 lg:ml-64 p-4 pb-24">
         {loading ? (
           <div className="flex flex-col justify-center items-center h-[60vh]">
-            <Loader2 className="animate-spin text-green-600 w-10 h-10 mb-2" />
-            <p className="text-gray-500 font-medium">ডেটা লোড হচ্ছে...</p>
-          </div>
-        ) : (
-          <div className="max-w-7xl mx-auto">
-            {activeTab === 'purchase' && <PurchaseModule purchases={data.purchases || []} refresh={refresh} />}
-            {activeTab === 'sales' && <SalesModule sales={data.sales || []} refresh={refresh} />}
-            
-            {/* StockModule ফিক্স করা হয়েছে: সব প্রয়োজনীয় ডেটা পাঠানো হচ্ছে */}
-            {activeTab === 'stock' && (
-              <StockModule 
-                stock={data.stock || {}} 
-                purchases={data.purchases || []}
-                sales={data.sales || []}
-                resets={data.resets || {}}
-                lotHistory={data.lotHistory || []}
-                refresh={refresh} 
-              />
-            )}
-
-            {activeTab === 'expense' && <ExpenseModule expenses={data.expenses || []} refresh={refresh} />}
-            {activeTab === 'due' && <DueModule dues={data.dues || []} refresh={refresh} />}
-            {activeTab === 'cash' && <CashModule cashLogs={data.cashLogs || []} refresh={refresh} />}
-            {activeTab === 'calc' && <DenominationModule refresh={refresh} />}
-            {activeTab === 'reports' && <ReportModule data={data} />}
-          </div>
-        )}
-      </main>
-
-      {/* মোবাইল নিচের মেনু */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around p-2 z-50">
-        <button onClick={() => setActiveTab('purchase')} className={`p-2 ${activeTab === 'purchase' ? 'text-green-600' : 'text-gray-400'}`}><ShoppingBag size={20}/></button>
-        <button onClick={() => setActiveTab('sales')} className={`p-2 ${activeTab === 'sales' ? 'text-green-600' : 'text-gray-400'}`}><ShoppingCart size={20}/></button>
-        <button onClick={() => setActiveTab('stock')} className={`p-2 ${activeTab === 'stock' ? 'text-green-600' : 'text-gray-400'}`}><Package size={20}/></button>
-        <button onClick={() => setActiveTab('reports')} className={`p-2 ${activeTab === 'reports' ? 'text-green-600' : 'text-gray-400'}`}><BarChart3 size={20}/></button>
-      </nav>
-    </div>
-  );
-};
-
-const App: React.FC = () => (
-  <ToastProvider>
-    <AppContent />
-  </ToastProvider>
-);
-
-export default App;
+            <Loader2 className="animate-spin text-green-60
