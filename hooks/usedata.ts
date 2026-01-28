@@ -27,7 +27,7 @@ export const useData = (isLoggedIn: boolean, isSettingUp: boolean) => {
         DataService.getResets()
       ]);
 
-      // রিসেট টাইমের পরের ডেটা ফিল্টার (যাতে লট শেষ হলে লিস্ট খালি হয়)
+      // ফিল্টারিং লজিক: লট শেষ হওয়ার আগের ডেটা বাদ দেওয়া
       const currentPurchases = allPurchases.filter(p => {
         const resetTime = resets[p.type] ? new Date(resets[p.type]) : new Date(0);
         return new Date(p.created_at || 0) > resetTime;
@@ -46,7 +46,7 @@ export const useData = (isLoggedIn: boolean, isSettingUp: boolean) => {
         expenses, dues, cashLogs, stock, resets, lotHistory 
       });
     } catch (error) {
-      console.error("ডেটা লোড এরর:", error);
+      console.error("ডেটা লোড করতে সমস্যা হয়েছে:", error);
     } finally {
       setLoading(false);
     }
