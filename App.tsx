@@ -6,6 +6,7 @@ import {
 
 import { supabase } from './services/supabaseClient'; 
 import { useData } from './hooks/usedata'; 
+import { DataService } from './services/dataService'; // এটি যোগ করা হয়েছে
 
 import AuthModule from './components/AuthModule';
 import PurchaseModule from './components/PurchaseModule';
@@ -40,7 +41,26 @@ const AppContent: React.FC = () => {
   const data = useData(isLoggedIn, false);
   const { loading, refresh } = data;
 
-  // মেনু নাম বাংলায় ম্যাপ
+  // লট রিসেট করার ফাংশন
+  const handleResetLot = async (type: string) => {
+    try {
+      const currentStock = data.stock[type] || { pieces: 0, kg: 0 };
+      const resetTime = data.resets[type] ? new Date(data.resets[type]).getTime() : 0;
+      
+      const lotPurchases = data.purchases.filter(p => p.type === type && new Date(p.created_at || p.date).getTime() > resetTime);
+      const lotSales = data.sales.filter(s => s.type === type && new Date(s.created_at || s.date).getTime() > resetTime);
+
+      const totalPurchase = lotPurchases.reduce((sum, p) => sum + (Number(p.total) || 0), 0);
+      const totalSale = lotSales.reduce((sum, s) => sum + (Number(s.total) || 0), 0);
+
+      // ডাটাবেসে সেভ এবং রিসেট
+      await DataService.resetLot(type, currentStock, totalPurchase, totalSale);
+      refresh(); // ডেটা রিফ্রেশ করা
+    } catch (error) {
+      console.error("Reset failed:", error);
+    }
+  };
+
   const menuNames: { [key: string]: string } = {
     purchase: 'কেনাকাটা',
     sales: 'বিক্রয়',
@@ -53,9 +73,7 @@ const AppContent: React.FC = () => {
   };
 
   if (!authChecked) return (
-    <div className="h-screen flex items-center justify-center font-bold text-gray-500">
-      চেক করা হচ্ছে...
-    </div>
+    <div className="h-screen flex items-center justify-center font-bold text-gray-500">চেক করা হচ্ছে...</div>
   );
 
   if (!isLoggedIn) return <AuthModule onAuthSuccess={() => setIsLoggedIn(true)} />;
@@ -73,24 +91,19 @@ const AppContent: React.FC = () => {
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`w-full text-left px-4 py-3 rounded-2xl font-bold transition-all ${
-                activeTab === tab 
-                  ? 'bg-green-600 text-white shadow-lg shadow-green-100' 
-                  : 'hover:bg-green-50 text-gray-600'
+                activeTab === tab ? 'bg-green-600 text-white shadow-lg shadow-green-100' : 'hover:bg-green-50 text-gray-600'
               }`}
             >
               {menuNames[tab]}
             </button>
           ))}
-          <button 
-            onClick={() => supabase.auth.signOut()} 
-            className="w-full text-left px-4 py-3 text-red-500 hover:bg-red-50 mt-10 flex items-center gap-2 font-bold rounded-2xl"
-          >
+          <button onClick={() => supabase.auth.signOut()} className="w-full text-left px-4 py-3 text-red-500 hover:bg-red-50 mt-10 flex items-center gap-2 font-bold rounded-2xl">
             <LogOut size={18} /> লগআউট
           </button>
         </nav>
       </aside>
 
-      {/* মেইন কন্টেন্ট এলাকা */}
+      {/* মেইন কন্টেন্ট */}
       <main className="flex-1 lg:ml-64 p-4 pb-24 min-h-screen">
         {loading ? (
           <div className="flex flex-col justify-center items-center h-[60vh]">
@@ -99,13 +112,8 @@ const AppContent: React.FC = () => {
           </div>
         ) : (
           <div className="max-w-7xl mx-auto">
-            {activeTab === 'purchase' && (
-              <PurchaseModule purchases={data.purchases || []} refresh={refresh} />
-            )}
-            
-            {activeTab === 'sales' && (
-              <SalesModule sales={data.sales || []} refresh={refresh} />
-            )}
+            {activeTab === 'purchase' && <PurchaseModule purchases={data.purchases || []} refresh={refresh} />}
+            {activeTab === 'sales' && <SalesModule sales={data.sales || []} refresh={refresh} />}
             
             {activeTab === 'stock' && (
               <StockModule 
@@ -114,35 +122,16 @@ const AppContent: React.FC = () => {
                 sales={data.sales || []}
                 resets={data.resets || {}}
                 lotHistory={data.lotHistory || []}
+                onResetLot={handleResetLot} // এখানে রিসেট ফাংশন পাঠানো হয়েছে
               />
             )}
 
-            {activeTab === 'expense' && (
-              <ExpenseModule expenses={data.expenses || []} refresh={refresh} />
-            )}
-
-            {activeTab === 'due' && (
-              <DueModule dues={data.dues || []} refresh={refresh} />
-            )}
-
-            {activeTab === 'cash' && (
-              <CashModule cashLogs={data.cashLogs || []} refresh={refresh} />
-            )}
+            {activeTab === 'expense' && <ExpenseModule expenses={data.expenses || []} refresh={refresh} />}
+            {activeTab === 'due' && <DueModule dues={data.dues || []} refresh={refresh} />}
+            {activeTab === 'cash' && <CashModule cashLogs={data.cashLogs || []} refresh={refresh} />}
             
-            {activeTab === 'calc' && (
-              <DenominationModule 
-                cashLogs={data.cashLogs || []} 
-                refresh={refresh} 
-              />
-            )}
-
-            {activeTab === 'reports' && (
-              <ReportModule 
-                purchases={data.purchases || []} 
-                sales={data.sales || []} 
-                expenses={data.expenses || []} 
-              />
-            )}
+            {activeTab === 'calc' && <DenominationModule cashLogs={data.cashLogs || []} refresh={refresh} />}
+            {activeTab === 'reports' && <ReportModule purchases={data.purchases || []} sales={data.sales || []} expenses={data.expenses || []} />}
           </div>
         )}
       </main>
