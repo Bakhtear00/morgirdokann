@@ -7,8 +7,8 @@ export const useData = (isLoggedIn: boolean, isSettingUp: boolean) => {
   const [data, setData] = useState({
     purchases: [] as Purchase[],
     sales: [] as Sale[],
-    allPurchases: [] as Purchase[], // রিপোর্টের জন্য পূর্ণ ইতিহাস
-    allSales: [] as Sale[],         // রিপোর্টের জন্য পূর্ণ ইতিহাস
+    allPurchases: [] as Purchase[], // এখানে যাতে ক্রস না আসে তাই টাইপ ঠিক করা হলো
+    allSales: [] as Sale[],         // এখানে যাতে ক্রস না আসে তাই টাইপ ঠিক করা হলো
     expenses: [] as Expense[],
     dues: [] as Due[],
     cashLogs: [] as CashLog[],
@@ -35,7 +35,7 @@ export const useData = (isLoggedIn: boolean, isSettingUp: boolean) => {
         DataService.getResets()
       ]);
 
-      // ১. শুধুমাত্র স্টকের জন্য বর্তমান লট ফিল্টার করা
+      // ফিল্টারিং লজিক
       const currentPurchases = allPurchases.filter(p => {
         const resetTimeStr = resets[p.type];
         const resetTime = resetTimeStr ? new Date(resetTimeStr).getTime() : 0;
@@ -50,20 +50,19 @@ export const useData = (isLoggedIn: boolean, isSettingUp: boolean) => {
         return itemTime > resetTime;
       });
 
-      // ২. বর্তমান লটের ওপর ভিত্তি করে স্টক হিসাব করা
       const stock = DataService.calculateStock(currentPurchases, currentSales);
       
       setData({ 
-        purchases: currentPurchases, // বর্তমান লটের কেনাকাটা
-        sales: currentSales,         // বর্তমান লটের বিক্রয়
-        allPurchases,                // রিপোর্টের জন্য সব কেনাকাটা
-        allSales,                    // রিপোর্টের জন্য সব বিক্রয়
-        expenses, 
-        dues, 
-        cashLogs, 
-        stock, 
-        resets, 
-        lotHistory 
+        purchases: currentPurchases, 
+        sales: currentSales, 
+        allPurchases: allPurchases || [], // নিশ্চিত করা হলো যাতে খালি না থাকে
+        allSales: allSales || [],         // নিশ্চিত করা হলো যাতে খালি না থাকে
+        expenses: expenses || [], 
+        dues: dues || [], 
+        cashLogs: cashLogs || [], 
+        stock: stock || {}, 
+        resets: resets || {}, 
+        lotHistory: lotHistory || [] 
       });
     } catch (error) {
       console.error("Data Load Error:", error);
