@@ -49,7 +49,6 @@ const checkAndTriggerAutoSave = async (type: string) => {
 };
 
 export const DataService = {
-  // --- লগইন এবং ইউজার ---
   signUp: async (name: string, email: string, password: string) => {
     const { error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: name } } });
     if (error) throw error;
@@ -61,7 +60,6 @@ export const DataService = {
   signOut: async () => await supabase.auth.signOut(),
   getUser: async () => (await supabase.auth.getUser()).data.user,
   
-  // --- ক্রয় (Purchase) ---
   getPurchases: async (): Promise<Purchase[]> => {
     const { data, error } = await supabase.from('purchases').select('*').order('date', { ascending: false });
     if (error) throw error;
@@ -102,7 +100,6 @@ export const DataService = {
     if (purchaseToDelete) await checkAndTriggerAutoSave(purchaseToDelete.type);
   },
 
-  // --- বিক্রয় (Sales) ---
   getSales: async (): Promise<Sale[]> => {
     const { data, error } = await supabase.from('sales').select('*').order('date', { ascending: false });
     if (error) throw error;
@@ -133,7 +130,6 @@ export const DataService = {
     if (saleToDelete) await checkAndTriggerAutoSave(saleToDelete.type);
   },
 
-  // --- খরচ ও ক্যাশ (Expense & Cash) ---
   getExpenses: async (): Promise<Expense[]> => {
     const { data, error } = await supabase.from('expenses').select('*').order('date', { ascending: false });
     if (error) throw error;
@@ -160,7 +156,6 @@ export const DataService = {
     await supabase.from('cash_logs').insert([{ ...c, user_id: user.id }]);
   },
 
-  // --- রিপোর্ট ও স্টক হিসাব ---
   getLotHistory: async (): Promise<LotArchive[]> => {
     const { data, error } = await supabase.from('lot_archives').select('*').order('date', { ascending: false });
     if (error) throw error;
