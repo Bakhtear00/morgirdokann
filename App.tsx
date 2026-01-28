@@ -52,23 +52,30 @@ const AppContent: React.FC = () => {
     reports: 'রিপোর্ট'
   };
 
-  if (!authChecked) return <div className="h-screen flex items-center justify-center font-bold">লোড হচ্ছে...</div>;
+  if (!authChecked) return (
+    <div className="h-screen flex items-center justify-center font-bold text-gray-500">
+      চেক করা হচ্ছে...
+    </div>
+  );
+
   if (!isLoggedIn) return <AuthModule onAuthSuccess={() => setIsLoggedIn(true)} />;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col lg:flex-row">
       {/* ডেস্কটপ সাইডবার */}
-      <aside className="hidden lg:flex w-64 bg-white border-r border-gray-200 flex-col fixed h-full">
-        <div className="p-6 border-b">
-          <h1 className="text-xl font-bold text-green-600 font-black">মুরগির দোকান</h1>
+      <aside className="hidden lg:flex w-64 bg-white border-r border-gray-200 flex-col fixed h-full shadow-sm">
+        <div className="p-6 border-b bg-white sticky top-0">
+          <h1 className="text-xl font-black text-green-600">বেলায়িত পোল্ট্রি</h1>
         </div>
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
           {Object.keys(menuNames).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`w-full text-left px-4 py-2 rounded-lg font-bold transition-all ${
-                activeTab === tab ? 'bg-green-600 text-white shadow-md' : 'hover:bg-green-50 text-gray-600'
+              className={`w-full text-left px-4 py-3 rounded-2xl font-bold transition-all ${
+                activeTab === tab 
+                  ? 'bg-green-600 text-white shadow-lg shadow-green-100' 
+                  : 'hover:bg-green-50 text-gray-600'
               }`}
             >
               {menuNames[tab]}
@@ -76,7 +83,7 @@ const AppContent: React.FC = () => {
           ))}
           <button 
             onClick={() => supabase.auth.signOut()} 
-            className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 mt-10 flex items-center gap-2 font-bold"
+            className="w-full text-left px-4 py-3 text-red-500 hover:bg-red-50 mt-10 flex items-center gap-2 font-bold rounded-2xl"
           >
             <LogOut size={18} /> লগআউট
           </button>
@@ -88,26 +95,39 @@ const AppContent: React.FC = () => {
         {loading ? (
           <div className="flex flex-col justify-center items-center h-[60vh]">
             <Loader2 className="animate-spin text-green-600 w-10 h-10 mb-2" />
-            <p className="text-gray-500 font-medium font-bold italic">তথ্য লোড হচ্ছে...</p>
+            <p className="text-gray-500 font-bold italic">ডেটা লোড হচ্ছে...</p>
           </div>
         ) : (
           <div className="max-w-7xl mx-auto">
-            {activeTab === 'purchase' && <PurchaseModule purchases={data.purchases || []} refresh={refresh} />}
-            {activeTab === 'sales' && <SalesModule sales={data.sales || []} refresh={refresh} />}
+            {activeTab === 'purchase' && (
+              <PurchaseModule purchases={data.purchases || []} refresh={refresh} />
+            )}
             
-           {activeTab === 'stock' && (
-  <StockModule 
-    stock={data.stock} 
-    purchases={data.purchases} 
-    sales={data.sales} 
-    resets={data.resets} 
-    lotHistory={data.lotHistory} 
-  />
-)}
+            {activeTab === 'sales' && (
+              <SalesModule sales={data.sales || []} refresh={refresh} />
+            )}
+            
+            {activeTab === 'stock' && (
+              <StockModule 
+                stock={data.stock || {}} 
+                purchases={data.purchases || []} 
+                sales={data.sales || []}
+                resets={data.resets || {}}
+                lotHistory={data.lotHistory || []}
+              />
+            )}
 
-            {activeTab === 'expense' && <ExpenseModule expenses={data.expenses || []} refresh={refresh} />}
-            {activeTab === 'due' && <DueModule dues={data.dues || []} refresh={refresh} />}
-            {activeTab === 'cash' && <CashModule cashLogs={data.cashLogs || []} refresh={refresh} />}
+            {activeTab === 'expense' && (
+              <ExpenseModule expenses={data.expenses || []} refresh={refresh} />
+            )}
+
+            {activeTab === 'due' && (
+              <DueModule dues={data.dues || []} refresh={refresh} />
+            )}
+
+            {activeTab === 'cash' && (
+              <CashModule cashLogs={data.cashLogs || []} refresh={refresh} />
+            )}
             
             {activeTab === 'calc' && (
               <DenominationModule 
@@ -116,33 +136,33 @@ const AppContent: React.FC = () => {
               />
             )}
 
-           {activeTab === 'reports' && (
-  <ReportModule 
-    purchases={data.purchases} 
-    sales={data.sales} 
-    expenses={data.expenses} 
-  />
-)}
+            {activeTab === 'reports' && (
+              <ReportModule 
+                purchases={data.purchases || []} 
+                sales={data.sales || []} 
+                expenses={data.expenses || []} 
+              />
+            )}
           </div>
         )}
       </main>
 
       {/* মোবাইল নিচের মেনু */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around p-2 z-50 shadow-lg">
-        <button onClick={() => setActiveTab('purchase')} className={`p-2 flex flex-col items-center ${activeTab === 'purchase' ? 'text-green-600' : 'text-gray-400'}`}>
-          <ShoppingBag size={20}/><span className="text-[10px] font-bold">কেনা</span>
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around p-2 z-50 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
+        <button onClick={() => setActiveTab('purchase')} className={`p-2 flex flex-col items-center flex-1 ${activeTab === 'purchase' ? 'text-green-600' : 'text-gray-400'}`}>
+          <ShoppingBag size={20}/><span className="text-[10px] font-bold mt-1">কেনা</span>
         </button>
-        <button onClick={() => setActiveTab('sales')} className={`p-2 flex flex-col items-center ${activeTab === 'sales' ? 'text-green-600' : 'text-gray-400'}`}>
-          <ShoppingCart size={20}/><span className="text-[10px] font-bold">বেচা</span>
+        <button onClick={() => setActiveTab('sales')} className={`p-2 flex flex-col items-center flex-1 ${activeTab === 'sales' ? 'text-green-600' : 'text-gray-400'}`}>
+          <ShoppingCart size={20}/><span className="text-[10px] font-bold mt-1">বেচা</span>
         </button>
-        <button onClick={() => setActiveTab('stock')} className={`p-2 flex flex-col items-center ${activeTab === 'stock' ? 'text-green-600' : 'text-gray-400'}`}>
-          <Package size={20}/><span className="text-[10px] font-bold">স্টক</span>
+        <button onClick={() => setActiveTab('stock')} className={`p-2 flex flex-col items-center flex-1 ${activeTab === 'stock' ? 'text-green-600' : 'text-gray-400'}`}>
+          <Package size={20}/><span className="text-[10px] font-bold mt-1">স্টক</span>
         </button>
-        <button onClick={() => setActiveTab('calc')} className={`p-2 flex flex-col items-center ${activeTab === 'calc' ? 'text-green-600' : 'text-gray-400'}`}>
-          <Calculator size={20}/><span className="text-[10px] font-bold">হিসাব</span>
+        <button onClick={() => setActiveTab('calc')} className={`p-2 flex flex-col items-center flex-1 ${activeTab === 'calc' ? 'text-green-600' : 'text-gray-400'}`}>
+          <Calculator size={20}/><span className="text-[10px] font-bold mt-1">হিসাব</span>
         </button>
-        <button onClick={() => setActiveTab('reports')} className={`p-2 flex flex-col items-center ${activeTab === 'reports' ? 'text-green-600' : 'text-gray-400'}`}>
-          <BarChart3 size={20}/><span className="text-[10px] font-bold">রিপোর্ট</span>
+        <button onClick={() => setActiveTab('reports')} className={`p-2 flex flex-col items-center flex-1 ${activeTab === 'reports' ? 'text-green-600' : 'text-gray-400'}`}>
+          <BarChart3 size={20}/><span className="text-[10px] font-bold mt-1">রিপোর্ট</span>
         </button>
       </nav>
     </div>
