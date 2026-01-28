@@ -42,25 +42,25 @@ const AppContent: React.FC = () => {
   const { loading, refresh } = data;
 
   // লট রিসেট করার ফাংশন
-  const handleResetLot = async (type: string) => {
-    try {
-      const currentStock = data.stock[type] || { pieces: 0, kg: 0 };
-      const resetTime = data.resets[type] ? new Date(data.resets[type]).getTime() : 0;
-      
-      const lotPurchases = data.purchases.filter(p => p.type === type && new Date(p.created_at || p.date).getTime() > resetTime);
-      const lotSales = data.sales.filter(s => s.type === type && new Date(s.created_at || s.date).getTime() > resetTime);
+// App.tsx এর handleResetLot ফাংশনটি এভাবে লিখুন
+const handleResetLot = async (type: string) => {
+  try {
+    const currentStock = (data.stock && data.stock[type]) || { pieces: 0, kg: 0 };
+    const resetTime = (data.resets && data.resets[type]) ? new Date(data.resets[type]).getTime() : 0;
+    
+    const lotPurchases = (data.purchases || []).filter(p => p.type === type && new Date(p.created_at || p.date).getTime() > resetTime);
+    const lotSales = (data.sales || []).filter(s => s.type === type && new Date(s.created_at || s.date).getTime() > resetTime);
 
-      const totalPurchase = lotPurchases.reduce((sum, p) => sum + (Number(p.total) || 0), 0);
-      const totalSale = lotSales.reduce((sum, s) => sum + (Number(s.total) || 0), 0);
+    const totalPurchase = lotPurchases.reduce((sum, p) => sum + (Number(p.total) || 0), 0);
+    const totalSale = lotSales.reduce((sum, s) => sum + (Number(s.total) || 0), 0);
 
-      // ডাটাবেসে সেভ এবং রিসেট
-      await DataService.resetLot(type, currentStock, totalPurchase, totalSale);
-      refresh(); // ডেটা রিফ্রেশ করা
-    } catch (error) {
-      console.error("Reset failed:", error);
-    }
-  };
-
+    // @ts-ignore (যদি টাইপ এরর দেখায় তবে এটি সাময়িক সমাধান)
+    await DataService.resetLot(type, currentStock, totalPurchase, totalSale);
+    refresh(); 
+  } catch (error) {
+    console.error("Reset failed:", error);
+  }
+};
   const menuNames: { [key: string]: string } = {
     purchase: 'কেনাকাটা',
     sales: 'বিক্রয়',
