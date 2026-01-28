@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 
 import { supabase } from './services/supabaseClient'; 
-import { useData } from './hooks/usedata'; // আপনার ফাইল লিস্ট অনুযায়ী usedata (ছোট হাতের d)
+import { useData } from './hooks/usedata'; 
 
 import AuthModule from './components/AuthModule';
 import PurchaseModule from './components/PurchaseModule';
@@ -40,26 +40,38 @@ const AppContent: React.FC = () => {
   const data = useData(isLoggedIn, false);
   const { loading, refresh } = data;
 
+  // মেনু নামগুলোকে বাংলায় ম্যাপ করা
+  const menuNames: { [key: string]: string } = {
+    purchase: 'কেনাকাটা',
+    sales: 'বিক্রয়',
+    stock: 'স্টক',
+    expense: 'খরচ',
+    due: 'বাকি',
+    cash: 'ক্যাশ',
+    calc: 'ক্যালকুলেটর',
+    reports: 'রিপোর্ট'
+  };
+
   if (!authChecked) return <div className="h-screen flex items-center justify-center font-bold">লোড হচ্ছে...</div>;
   if (!isLoggedIn) return <AuthModule onAuthSuccess={() => setIsLoggedIn(true)} />;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col lg:flex-row">
-      {/* Sidebar for Desktop */}
+      {/* ডেস্কটপ সাইডবার */}
       <aside className="hidden lg:flex w-64 bg-white border-r border-gray-200 flex-col fixed h-full">
         <div className="p-6 border-b">
           <h1 className="text-xl font-bold text-green-600">মুরগির দোকান</h1>
         </div>
         <nav className="flex-1 p-4 space-y-2">
-          {['purchase', 'sales', 'stock', 'expense', 'due', 'cash', 'calc', 'reports'].map((tab) => (
+          {Object.keys(menuNames).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`w-full text-left px-4 py-2 rounded-lg capitalize ${
+              className={`w-full text-left px-4 py-2 rounded-lg ${
                 activeTab === tab ? 'bg-green-600 text-white shadow-md' : 'hover:bg-green-50'
               }`}
             >
-              {tab === 'calc' ? 'ক্যালকুলেটর' : tab === 'reports' ? 'রিপোর্ট' : tab}
+              {menuNames[tab]}
             </button>
           ))}
           <button 
@@ -71,7 +83,7 @@ const AppContent: React.FC = () => {
         </nav>
       </aside>
 
-      {/* Main Content */}
+      {/* মেইন কন্টেন্ট */}
       <main className="flex-1 lg:ml-64 p-4 pb-24">
         {loading ? (
           <div className="flex flex-col justify-center items-center h-[60vh]">
@@ -82,7 +94,7 @@ const AppContent: React.FC = () => {
           <div className="max-w-7xl mx-auto">
             {activeTab === 'purchase' && <PurchaseModule purchases={data.purchases || []} refresh={refresh} />}
             {activeTab === 'sales' && <SalesModule sales={data.sales || []} refresh={refresh} />}
-            {activeTab === 'stock' && <StockModule stock={data.stock || []} refresh={refresh} />}
+            {activeTab === 'stock' && <StockModule stock={data.stock || {}} refresh={refresh} />}
             {activeTab === 'expense' && <ExpenseModule expenses={data.expenses || []} refresh={refresh} />}
             {activeTab === 'due' && <DueModule dues={data.dues || []} refresh={refresh} />}
             {activeTab === 'cash' && <CashModule cashLogs={data.cashLogs || []} refresh={refresh} />}
@@ -92,7 +104,7 @@ const AppContent: React.FC = () => {
         )}
       </main>
 
-      {/* Mobile Bottom Nav */}
+      {/* মোবাইল নিচের মেনু */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around p-2 z-50">
         <button onClick={() => setActiveTab('purchase')} className={`p-2 ${activeTab === 'purchase' ? 'text-green-600' : 'text-gray-400'}`}><ShoppingBag size={20}/></button>
         <button onClick={() => setActiveTab('sales')} className={`p-2 ${activeTab === 'sales' ? 'text-green-600' : 'text-gray-400'}`}><ShoppingCart size={20}/></button>
