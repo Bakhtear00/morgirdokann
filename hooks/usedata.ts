@@ -26,12 +26,9 @@ export const useData = (isLoggedIn: boolean, isSettingUp: boolean) => {
       ]);
 
       const stock = DataService.calculateStock(purchases, sales);
-      
-      setData({ 
-        purchases, sales, expenses, dues, cashLogs, stock, resets, lotHistory 
-      });
+      setData({ purchases, sales, expenses, dues, cashLogs, stock, resets, lotHistory });
     } catch (error) {
-      console.error(error);
+      console.error("Fetch error:", error);
     } finally {
       setLoading(false);
     }
