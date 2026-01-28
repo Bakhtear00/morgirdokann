@@ -1,4 +1,4 @@
-\// @ts-nocheck
+// @ts-nocheck
 import { useState, useEffect, useCallback } from 'react';
 import { DataService } from '../services/dataService';
 
