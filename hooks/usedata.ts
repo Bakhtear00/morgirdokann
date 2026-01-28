@@ -1,19 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
 import { DataService } from '../services/dataService';
-// শুধু এই লাইনটি সাবধানে খেয়াল করুন
+// এখান থেকে টাইপগুলো সরাসরি নেওয়া হচ্ছে
 import type { Purchase, Sale, Expense, Due, LotArchive } from '../services/dataService';
 
 export const useData = (isLoggedIn: boolean, isSettingUp: boolean) => {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState({
-    purchases: [],
-    sales: [],
-    expenses: [],
-    dues: [],
-    cashLogs: [],
-    stock: {},
-    resets: {},
-    lotHistory: [],
+    purchases: [] as Purchase[],
+    sales: [] as Sale[],
+    expenses: [] as Expense[],
+    dues: [] as Due[],
+    stock: {} as any,
+    resets: {} as any,
+    lotHistory: [] as LotArchive[],
   });
 
   const fetchData = useCallback(async () => {
@@ -24,26 +23,22 @@ export const useData = (isLoggedIn: boolean, isSettingUp: boolean) => {
 
     setLoading(true);
     try {
-      const [purchases, sales, expenses, dues, cashLogs, lotHistory, resets] = await Promise.all([
+      const [purchases, sales, expenses, dues, lotHistory, resets] = await Promise.all([
         DataService.getPurchases(),
         DataService.getSales(),
         DataService.getExpenses(),
         DataService.getDues(),
-        DataService.getCashLogs(),
         DataService.getLotHistory(),
         DataService.getResets()
       ]);
 
-      // রিসেট টাইম অনুযায়ী ডাটা ফিল্টার করা
-      const currentPurchases = (purchases || []).filter((p) => {
-        const resetTimeStr = resets?.[p.type];
-        const resetTime = resetTimeStr ? new Date(resetTimeStr).getTime() : 0;
+      const currentPurchases = purchases.filter(p => {
+        const resetTime = resets[p.type] ? new Date(resets[p.type]).getTime() : 0;
         return new Date(p.created_at || p.date).getTime() > resetTime;
       });
 
-      const currentSales = (sales || []).filter((s) => {
-        const resetTimeStr = resets?.[s.type];
-        const resetTime = resetTimeStr ? new Date(resetTimeStr).getTime() : 0;
+      const currentSales = sales.filter(s => {
+        const resetTime = resets[s.type] ? new Date(resets[s.type]).getTime() : 0;
         return new Date(s.created_at || s.date).getTime() > resetTime;
       });
 
@@ -52,12 +47,11 @@ export const useData = (isLoggedIn: boolean, isSettingUp: boolean) => {
       setData({ 
         purchases: currentPurchases, 
         sales: currentSales, 
-        expenses: expenses || [], 
-        dues: dues || [], 
-        cashLogs: cashLogs || [], 
-        stock: stock || {}, 
-        resets: resets || {}, 
-        lotHistory: lotHistory || [] 
+        expenses, 
+        dues, 
+        stock, 
+        resets, 
+        lotHistory 
       });
     } catch (error) {
       console.error("Data Load Error:", error);
