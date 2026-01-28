@@ -1,12 +1,16 @@
 import { supabase } from './supabaseClient';
 
-// এখানে সব টাইপ লিখে দিলাম যাতে ক্রস না আসে
-export interface Purchase { id?: string; user_id?: string; date: string; type: string; pieces: number; kg: number; rate: number; total: number; created_at?: string; }
-export interface Sale { id?: string; user_id?: string; date: string; type: string; pieces: number; kg: number; rate: number; total: number; mortality: number; created_at?: string; }
-export interface Expense { id?: string; user_id?: string; date: string; category: string; amount: number; note?: string; created_at?: string; }
-export interface Due { id?: string; user_id?: string; customer_name: string; amount: number; mobile?: string; status: string; created_at?: string; }
-export interface CashLog { id?: string; user_id?: string; date: string; amount: number; type: 'in' | 'out'; note?: string; created_at?: string; }
-export interface LotArchive { id?: string; user_id?: string; type: string; total_purchase: number; total_sale: number; profit: number; pieces_at_reset: number; date: string; }
+import { supabase } from './supabaseClient';
+
+// এগুলো যোগ করুন, অন্য ফাইলের ক্রস দূর হবে
+export type Purchase = { id?: string; user_id?: string; date: string; type: string; pieces: number; kg: number; rate: number; total: number; created_at?: string; };
+export type Sale = { id?: string; user_id?: string; date: string; type: string; pieces: number; kg: number; rate: number; total: number; mortality: number; created_at?: string; };
+export type Expense = { id?: string; user_id?: string; date: string; category: string; amount: number; note?: string; };
+export type Due = { id?: string; user_id?: string; customer_name: string; amount: number; status: string; };
+export type CashLog = { id?: string; user_id?: string; date: string; amount: number; type: 'in' | 'out'; };
+export type LotArchive = { id?: string; user_id?: string; type: string; total_purchase: number; total_sale: number; profit: number; pieces_at_reset: number; date: string; };
+
+
 
 export const DataService = {
   // ডাটা আনার ফাংশনগুলো
