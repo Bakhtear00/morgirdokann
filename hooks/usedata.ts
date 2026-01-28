@@ -1,13 +1,20 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { DataService } from '../services/dataService';
+import { Purchase, Sale, Expense, Due, CashLog, LotArchive } from '../types';
 
 export const useData = (isLoggedIn: boolean, isSettingUp: boolean) => {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState({
-    purchases: [], sales: [], expenses: [], dues: [], cashLogs: [],
-    stock: {}, resets: {}, lotHistory: [],
-    allPurchases: [], allSales: [] // সব ডেটা রাখার জন্য নতুন দুইটা ঘর
+    purchases: [] as Purchase[],
+    sales: [] as Sale[],
+    allPurchases: [] as Purchase[], // রিপোর্টের জন্য পূর্ণ ইতিহাস
+    allSales: [] as Sale[],         // রিপোর্টের জন্য পূর্ণ ইতিহাস
+    expenses: [] as Expense[],
+    dues: [] as Due[],
+    cashLogs: [] as CashLog[],
+    stock: {} as { [key: string]: { pieces: number; kg: number; dead: number } },
+    resets: {} as { [key: string]: string },
+    lotHistory: [] as LotArchive[],
   });
 
   const fetchData = useCallback(async () => {
@@ -28,25 +35,35 @@ export const useData = (isLoggedIn: boolean, isSettingUp: boolean) => {
         DataService.getResets()
       ]);
 
-      // শুধুমাত্র স্টকের জন্য ফিল্টারিং
+      // ১. শুধুমাত্র স্টকের জন্য বর্তমান লট ফিল্টার করা
       const currentPurchases = allPurchases.filter(p => {
-        const resetTime = resets[p.type] ? new Date(resets[p.type]) : new Date(0);
-        return new Date(p.created_at || 0) > resetTime;
+        const resetTimeStr = resets[p.type];
+        const resetTime = resetTimeStr ? new Date(resetTimeStr).getTime() : 0;
+        const itemTime = new Date(p.created_at || p.date).getTime();
+        return itemTime > resetTime;
       });
 
       const currentSales = allSales.filter(s => {
-        const resetTime = resets[s.type] ? new Date(resets[s.type]) : new Date(0);
-        return new Date(s.created_at || 0) > resetTime;
+        const resetTimeStr = resets[s.type];
+        const resetTime = resetTimeStr ? new Date(resetTimeStr).getTime() : 0;
+        const itemTime = new Date(s.created_at || s.date).getTime();
+        return itemTime > resetTime;
       });
 
+      // ২. বর্তমান লটের ওপর ভিত্তি করে স্টক হিসাব করা
       const stock = DataService.calculateStock(currentPurchases, currentSales);
       
       setData({ 
-        purchases: currentPurchases, 
-        sales: currentSales, 
-        allPurchases, // রিপোর্টের জন্য সব কেনা
-        allSales,     // রিপোর্টের জন্য সব বেচা
-        expenses, dues, cashLogs, stock, resets, lotHistory 
+        purchases: currentPurchases, // বর্তমান লটের কেনাকাটা
+        sales: currentSales,         // বর্তমান লটের বিক্রয়
+        allPurchases,                // রিপোর্টের জন্য সব কেনাকাটা
+        allSales,                    // রিপোর্টের জন্য সব বিক্রয়
+        expenses, 
+        dues, 
+        cashLogs, 
+        stock, 
+        resets, 
+        lotHistory 
       });
     } catch (error) {
       console.error("Data Load Error:", error);
