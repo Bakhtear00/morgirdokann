@@ -5,7 +5,7 @@ export const BENGALI_TEXT = {
   purchase: 'কেনা (Purchase)',
   sales: 'বেচা (Sales)',
   stock: 'স্টক (Stock)',
-  expenses: 'খরচ',
+  expenses: 'খ',
   cash: 'ক্যাশ বক্স',
   due: 'বাকি হিসাব',
   reports: 'রিপোর্ট',
