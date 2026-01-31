@@ -1,21 +1,14 @@
-
 import React, { useState } from 'react';
 import { BarChart3 } from 'lucide-react';
-import type { Purchase, Sale, Expense } from '../services/dataService';
 
-interface ReportProps {
-  purchases?: Purchase[];
-  sales?: Sale[];
-  expenses?: Expense[];
-}
-
-const ReportModule: React.FC<ReportProps> = ({ purchases = [], sales = [], expenses = [] }) => {
+const ReportModule = ({ purchases = [], sales = [], expenses = [] }: any) => {
   const [filter, setFilter] = useState('all');
 
   const filterItems = (items: any[]) => {
+    if (!Array.isArray(items)) return [];
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    return (items || []).filter(item => {
+    return items.filter(item => {
       const d = new Date(item.created_at || item.date).getTime();
       if (filter === 'today') return d >= today;
       return true;
@@ -31,12 +24,12 @@ const ReportModule: React.FC<ReportProps> = ({ purchases = [], sales = [], expen
   const exp = e.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
 
   return (
-    <div className="p-4 space-y-6 animate-fade-in">
+    <div className="p-4 space-y-6">
       <div className="flex justify-between items-center bg-white p-4 rounded-3xl shadow-sm border">
         <h2 className="text-xl font-black flex items-center gap-2 text-gray-800">
           <BarChart3 className="text-green-600"/> রিপোর্ট
         </h2>
-        <select value={filter} onChange={(e) => setFilter(e.target.value)} className="bg-gray-50 p-2 rounded-xl text-sm font-bold border-none">
+        <select value={filter} onChange={(e) => setFilter(e.target.value)} className="bg-gray-50 p-2 rounded-xl text-sm font-bold border-none outline-none ring-2 ring-green-100">
           <option value="all">সব সময়</option>
           <option value="today">আজ</option>
         </select>
