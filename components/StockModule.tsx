@@ -1,6 +1,6 @@
-import React, { useMemo, useState, useRef } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Package, RotateCcw, TrendingUp, TrendingDown } from 'lucide-react';
-// সার্ভিস থেকে টাইপ ইম্পোর্ট
+// সার্ভিস থেকে সরাসরি টাইপ ইম্পোর্ট
 import type { Purchase, Sale, LotArchive } from '../services/dataService';
 
 interface StockModuleProps {
@@ -11,10 +11,12 @@ interface StockModuleProps {
   lotHistory: LotArchive[];
   onResetLot?: (type: string) => void;
 }
-// বাকি কোড যা ছিল তাই থাকবে...
 
+export const StockModule: React.FC<StockModuleProps> = ({ 
+  stock, purchases, sales, resets, lotHistory, onResetLot 
+}) => {
+  // আপনার বাকি কোড...
 
-const StockModule: React.FC<StockModuleProps> = ({ stock, purchases = [], sales = [], resets = {}, lotHistory = [], onResetLot }) => {
   const [resettingType, setResettingType] = useState<string | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
