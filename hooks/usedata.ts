@@ -1,50 +1,56 @@
 import { useState, useEffect, useCallback } from 'react';
 import { DataService } from '../services/dataService';
+import { Purchase, Sale, Expense, DueRecord, CashLog, LotArchive } from '../types';
 
-export const useData = (isLoggedIn: boolean) => {
-  const [data, setData] = useState({
-    purchases: [],
-    sales: [],
-    expenses: [],
-    dues: [],
-    stock: {},
-    resets: {},
-    lotHistory: [],
-  });
+interface AppData {
+  purchases: Purchase[];
+  sales: Sale[];
+  expenses: Expense[];
+  dues: DueRecord[];
+  cashLogs: CashLog[];
+  stock: { [key: string]: { pieces: number; kg: number; dead: number; } };
+  resets: { [key: string]: string };
+  lotHistory: LotArchive[];
+}
+
+export const useData = (isLoggedIn: boolean, isSettingUp: boolean) => {
   const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<AppData>({
+    purchases: [], sales: [], expenses: [], dues: [], cashLogs: [],
+    stock: {}, resets: {}, lotHistory: []
+  });
 
   const fetchData = useCallback(async () => {
-    if (!isLoggedIn) return;
+    if (!isLoggedIn || isSettingUp) {
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
-      const [purchases, sales, expenses, dues, lotHistory, resets] = await Promise.all([
+      const [purchases, sales, expenses, dues, cashLogs, lotHistory, resets] = await Promise.all([
         DataService.getPurchases(),
         DataService.getSales(),
         DataService.getExpenses(),
         DataService.getDues(),
+        DataService.getCashLogs(),
         DataService.getLotHistory(),
         DataService.getResets()
       ]);
 
-      const currentStock = DataService.calculateStock(purchases || [], sales || []);
+      const stock = DataService.calculateStock(purchases, sales);
       
-      setData({
-        purchases: purchases || [],
-        sales: sales || [],
-        expenses: expenses || [],
-        dues: dues || [],
-        stock: currentStock || {},
-        resets: resets || {},
-        lotHistory: lotHistory || [],
-      });
+      setData({ purchases, sales, expenses, dues, cashLogs, stock, resets, lotHistory });
     } catch (error) {
-      console.error("Error fetching data:", error);
+      console.error("Failed to fetch data:", error);
     } finally {
       setLoading(false);
     }
-  }, [isLoggedIn]);
+  }, [isLoggedIn, isSettingUp]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   return { ...data, loading, refresh: fetchData };
 };
