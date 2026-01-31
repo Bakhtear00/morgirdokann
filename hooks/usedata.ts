@@ -3,6 +3,7 @@ import { DataService } from '../services/dataService';
 // এখান থেকে টাইপগুলো সরাসরি নেওয়া হচ্ছে
 import type { Purchase, Sale, Expense, Due, LotArchive } from '../services/dataService';
 
+
 export const useData = (isLoggedIn: boolean, isSettingUp: boolean) => {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState({
