@@ -2,6 +2,7 @@ import { supabase } from './supabaseClient';
 
 import { supabase } from './supabaseClient';
 
+
 // এগুলো যোগ করুন, অন্য ফাইলের ক্রস দূর হবে
 export type Purchase = { id?: string; user_id?: string; date: string; type: string; pieces: number; kg: number; rate: number; total: number; created_at?: string; };
 export type Sale = { id?: string; user_id?: string; date: string; type: string; pieces: number; kg: number; rate: number; total: number; mortality: number; created_at?: string; };
